@@ -7,28 +7,25 @@
     </head>
     <body>
         <p></p>
-        <div style="text-align: center">
-            <button id="bot">Играть с ботом</button>
-            <button id="friend">Играть с другом</button>
+        <div id="gameType" style="text-align: center">
+            <button id="bot" type="button">Играть с ботом</button>
+            <button id="friend" type="button">Играть с другом</button>
         </div>
         <p></p>
         <div id="size" style="text-align: center">
             Выберите размер игрового поля
             <p></p>
-            <label> 
-                <input type="radio" name="field-size" value="10x10">10x10
-            </label>
-            <label>
-                <input type="radio" name="field-size" value="15x15">15x15
-            </label>
-            <label>
-                <input type="radio" name="field-size" value="20x20">20x20
-            </label>
+            <input type="radio" name="field-size" value="10x10">10x10
+            <input type="radio" name="field-size" value="15x15">15x15
+            <input type="radio" name="field-size" value="20x20">20x20
         </div>
-        <div style="text-align: center"> 
+        <div id="board" style="text-align: center"> 
             <p></p>
             Это пока пустой div для карты
         </div>
     </body>
-    <script src="./index.js"></script>
+
+    <!-- type="module" нужно, чтою файлы могли друг друга импортировать -->
+    <!-- потом можэно объединить и убрать-->
+    <script type="module" src="./index.js"></script>
 </html>
