@@ -68,3 +68,14 @@ body {
 #board1 .cell.shooting {
     box-shadow: 0 0 20px 10px rgba(255, 0, 0, 0.5);
 }
+
+/* Новые стили для перекрашивания клеток при попадании */
+/* Для поля игрока (при попадании бота) */
+#board1 .cell.hit {
+    background-color: darkorchid;
+}
+
+/* Для поля бота (при попадании игрока) */
+#board2 .cell.hit {
+    background-color: orangered;
+}

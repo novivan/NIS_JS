@@ -2,6 +2,8 @@ document.getElementById('startBtn').addEventListener('click', initGame);
 
 let boardSize, mode;
 let currentPlayer = 1;
+let isBotMoving = false; // Новый флаг для отслеживания хода бота
+let playerCanShoot = true; // Новый флаг для контроля возможности выстрела игрока
 let boards = {}; // boards.player и boards.bot для режима single
 let shipPlacementPhase = false;
 const shipsCount = () => Math.floor(boardSize / 2);
@@ -140,6 +142,9 @@ function placementHandler(e) {
     if(!placementStart) {
         placementStart = {row, col, el: cell};
         cell.classList.add('selected');
+        // Выводим подсказку для выбора второго конца корабля
+        document.getElementById('placementMsg').textContent = 
+            `Выберите другой конец корабля длиной ${shipsToPlace[currentShipIndex]}`;
     } else {
         const start = placementStart;
         let shipCells = [];
@@ -225,36 +230,50 @@ function attachShootingEvents() {
     });
 }
 
-// В обработчике выстрела игрока
+// Новая функция для отключения кликов по полю бота
+function detachShootingEvents() {
+    const boardCells = document.getElementById('board2').querySelectorAll('.cell');
+    boardCells.forEach(cell => {
+        cell.removeEventListener('click', shootingHandler);
+    });
+}
+
+// Изменённый обработчик выстрела игрока:
 function shootingHandler(e) {
-    if(gameState !== 'battle') return;
+    if(gameState !== 'battle' || isBotMoving || !playerCanShoot) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        return;
+    }
+    // Убираем detachShootingEvents() здесь, чтобы не блокировать клики преждевременно
+    playerCanShoot = false; // блокируем повторный выстрел
     const cell = e.target;
     const row = Number(cell.dataset.row);
     const col = Number(cell.dataset.col);
     if(cell.classList.contains('hit') || cell.classList.contains('miss')) return;
     
-    // Добавляем анимацию выстрела
     cell.classList.add('shooting');
-    // Удаляем класс анимации после её завершения
     setTimeout(() => {
         cell.classList.remove('shooting');
+        if(boards.bot[row][col] === 1) {
+            cell.classList.add('hit');
+            if(isShipSunk(row, col)) {
+                markSurrounding(row, col);
+            }
+            if(checkVictory(boards.bot, '#board2')) {
+                gameEnd('victory');
+                return;
+            }
+            // При попадании даём игроку возможность стрелять сразу
+            setTimeout(() => {
+                playerCanShoot = true;
+                attachShootingEvents();
+            }, 500);
+        } else {
+            cell.classList.add('miss');
+            setTimeout(botMove, 500);
+        }
     }, 500);
-    
-    if(boards.bot[row][col] === 1) {
-        cell.classList.add('hit');
-        if(isShipSunk(row, col)) {
-            markSurrounding(row, col);
-        }
-        // Если все корабли противника уничтожены, завершаем игру
-        if(checkVictory(boards.bot, '#board2')) {
-            gameEnd('victory');
-            return;
-        }
-        // При попадании игрок ходит снова
-    } else {
-        cell.classList.add('miss');
-        setTimeout(botMove, 500);
-    }
 }
 
 // Функция проверки уничтожения корабля на поле бота (board2)
@@ -319,6 +338,9 @@ function markSurrounding(row, col) {
 
 // Аналогичная логика для хода бота: он ходит по полю игрока (board1)
 function botMove() {
+    isBotMoving = true; // Бот начинает ход
+    detachShootingEvents(); // отключаем клики по полю противника
+    document.getElementById('board2').style.pointerEvents = 'none'; // блокируем клики по полю противника
     let row, col, cell;
     do {
         row = Math.floor(Math.random() * boardSize);
@@ -346,12 +368,15 @@ function botMove() {
                     return;
                 }
                 // Бот стреляет снова при попадании
-                setTimeout(botMove, 500);
+                setTimeout(() => { botMove().then(resolve); }, 500);
             } else {
                 cell.classList.add('miss');
-                // Ход переходит к игроку
+                isBotMoving = false; // Бот завершил свои выстрелы, даём ход игроку
+                document.getElementById('board2').style.pointerEvents = 'auto'; // восстанавливаем клики по полю противника
+                attachShootingEvents(); // восстанавливаем обработчик кликов по клеткам
+                playerCanShoot = true; // разрешаем ход игрока после окончания хода бота
+                resolve();
             }
-            resolve();
         }, 500);
     });
 }
@@ -443,25 +468,6 @@ function handlePlayerAction(cell) {
     setTimeout(botMove, 500);
 }
 
-function botMove() {
-    let row, col, cell;
-    do {
-        row = Math.floor(Math.random() * boardSize);
-        col = Math.floor(Math.random() * boardSize);
-        cell = document.querySelector(`#board1 .cell[data-row='${row}'][data-col='${col}']`);
-    } while(cell.classList.contains('hit') || cell.classList.contains('miss') || cell.classList.contains('ship'));
-    
-    // Добавляем анимацию выстрела, аналогичную анимации игрока
-    cell.classList.add('shooting');
-    setTimeout(() => {
-        cell.classList.remove('shooting');
-        if(boards.player[row][col] === 1) {
-            cell.classList.add('hit');
-        } else {
-            cell.classList.add('miss');
-        }
-    }, 500);
-}
 
 // Функция проверки победы по заданной доске (board) и селектору DOM-контейнера
 function checkVictory(board, boardSelector) {
