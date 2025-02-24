@@ -46,6 +46,8 @@ function initGame() {
         document.getElementById('confirmShipsBtn').style.display = 'none';
         document.getElementById('placementMsg').style.display = 'block';
         document.getElementById('placementMsg').textContent = `Разместите корабль длиной ${shipsToPlace[currentShipIndex]}`;
+        // Показываем подсказку только в фазе расстановки кораблей
+        document.getElementById('shipHint').style.display = 'block';
         attachPlacementEvents();
     } else {
         // Для двух игроков аналогично – автоматическая расстановка по правилам
@@ -142,9 +144,9 @@ function placementHandler(e) {
     if(!placementStart) {
         placementStart = {row, col, el: cell};
         cell.classList.add('selected');
-        // Выводим подсказку для выбора второго конца корабля
         document.getElementById('placementMsg').textContent = 
             `Выберите другой конец корабля длиной ${shipsToPlace[currentShipIndex]}`;
+        document.getElementById('placementMsg').classList.add('smaller');
     } else {
         const start = placementStart;
         let shipCells = [];
@@ -187,12 +189,15 @@ function placementHandler(e) {
         });
         currentShipIndex++;
         clearSelection();
+        const msg = document.getElementById('placementMsg');
         if(currentShipIndex < shipsToPlace.length) {
-            document.getElementById('placementMsg').textContent = `Разместите корабль длиной ${shipsToPlace[currentShipIndex]}`;
+            msg.textContent = `Разместите корабль длиной ${shipsToPlace[currentShipIndex]}`;
+            msg.classList.remove('smaller'); // Вернуть обычный размер для следующей подсказки, если требуется
         } else {
-            // Переводим игру в фазу боя
+            // Переводим игру в фазу боя, скрываем подсказку для расстановки
             gameState = 'battle';
             document.getElementById('placementMsg').style.display = 'none';
+            document.getElementById('shipHint').style.display = 'none';
             detachPlacementEvents();
             attachShootingEvents();
         }
@@ -228,6 +233,8 @@ function attachShootingEvents() {
     boardCells.forEach(cell => {
         cell.addEventListener('click', shootingHandler);
     });
+    // Отображаем подсказку для хода игрока
+    document.getElementById('turnHint').style.display = 'block';
 }
 
 // Новая функция для отключения кликов по полю бота
@@ -236,6 +243,8 @@ function detachShootingEvents() {
     boardCells.forEach(cell => {
         cell.removeEventListener('click', shootingHandler);
     });
+    // Скрываем подсказку, когда ход не игрока
+    document.getElementById('turnHint').style.display = 'none';
 }
 
 // Изменённый обработчик выстрела игрока:

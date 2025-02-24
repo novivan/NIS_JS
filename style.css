@@ -79,3 +79,7 @@ body {
 #board2 .cell.hit {
     background-color: orangered;
 }
+
+#placementMsg.smaller {
+    font-size: 0.9em;
+}
