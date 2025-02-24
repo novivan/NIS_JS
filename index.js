@@ -10,13 +10,29 @@ const shipsCount = () => Math.floor(boardSize / 2);
 
 // Новые переменные для state machine и расстановки кораблей
 let gameState = 'setup'; // 'placement', 'battle', 'end'
-const shipsToPlace = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1];
+let shipsToPlace = [];
 let currentShipIndex = 0;
 let placementStart = null; // {row, col, el}
 
 function initGame() {
     mode = document.getElementById('mode').value;
     boardSize = parseInt(document.getElementById('boardSize').value);
+    
+    // Определяем набор кораблей в зависимости от размера поля
+    if (boardSize === 10) {
+        // 10x10: площадь 100, 20% ≈ 20 клеток
+        // Используем меньше элементов с более длинными кораблями
+        shipsToPlace = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]; 
+    } else if (boardSize === 15) {
+        // 15x15: площадь 225, 20% ≈ 45 клеток
+        // Пример: один корабль 8-палубный, один 7-палубный, два 6-палубных, один 5-палубный, один 4-палубный, один 3-палубный, два 2-палубных, один однопалубный
+        shipsToPlace = [8, 7, 6, 6, 5, 4, 3, 2, 2, 1]; // сумма = 40 (немного ниже целевого, но можно при желании добавить ещё 1-палубный)
+    } else if (boardSize === 20) {
+        // 20x20: площадь 400, 20% ≈ 80 клеток
+        // Пример: один 10-палубный, один 9-палубный, два 8-палубных, два 7-палубных, два 6-палубных, два 5-палубных, два 4-палубных, один 3-палубный
+        shipsToPlace = [10, 9, 8, 8, 7, 7, 6, 6, 5, 5, 4, 4, 3]; // сумма ≈ 72 (можно добавить ещё пару однопалубных, если нужно)
+    }
+    
     // Очистка полей
     document.getElementById('board1').innerHTML = '';
     document.getElementById('board2').innerHTML = '';
