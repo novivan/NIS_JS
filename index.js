@@ -215,6 +215,8 @@ function placementHandler(e) {
             document.getElementById('placementMsg').style.display = 'none';
             document.getElementById('shipHint').style.display = 'none';
             detachPlacementEvents();
+            // Восстанавливаем возможность клика по полю противника
+            document.getElementById('board2').style.pointerEvents = 'auto';
             attachShootingEvents();
         }
     }
