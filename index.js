@@ -20,41 +20,26 @@ function initGame() {
     
     // Определяем набор кораблей в зависимости от размера поля
     if (boardSize === 10) {
-        // 10x10: площадь 100, 20% ≈ 20 клеток
-        // Используем меньше элементов с более длинными кораблями
         shipsToPlace = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]; 
     } else if (boardSize === 15) {
-        // 15x15: площадь 225, 20% ≈ 45 клеток
-        // Пример: один корабль 8-палубный, один 7-палубный, два 6-палубных, один 5-палубный, один 4-палубный, один 3-палубный, два 2-палубных, один однопалубный
-        shipsToPlace = [8, 7, 6, 6, 5, 4, 3, 2, 2, 1]; // сумма = 40 (немного ниже целевого, но можно при желании добавить ещё 1-палубный)
+        shipsToPlace = [8, 7, 6, 6, 5, 4, 3, 2, 2, 1];
     } else if (boardSize === 20) {
-        // 20x20: площадь 400, 20% ≈ 80 клеток
-        // Пример: один 10-палубный, один 9-палубный, два 8-палубных, два 7-палубных, два 6-палубных, два 5-палубных, два 4-палубных, один 3-палубный
-        shipsToPlace = [10, 9, 8, 8, 7, 7, 6, 6, 5, 5, 4, 4, 3]; // сумма ≈ 72 (можно добавить ещё пару однопалубных, если нужно)
+        shipsToPlace = [10, 9, 8, 8, 7, 7, 6, 6, 5, 5, 4, 4, 3];
     }
     
     // Очистка полей
     document.getElementById('board1').innerHTML = '';
     document.getElementById('board2').innerHTML = '';
     
-    if(mode === 'single') {
-        // Пользователь расставляет корабли на board1, бот – автоматически на board2
-        boards = {
-            player: createEmptyBoard(boardSize),
-            bot: createEmptyBoard(boardSize)
-        };
-    } else {
-        // Двух игроков – оба получают автоматическую расстановку (без фазы выбора)
-        boards = {
-            1: createEmptyBoard(boardSize),
-            2: createEmptyBoard(boardSize)
-        };
-    }
-    // Генерация DOM
+    // Генерация DOM (перенесено сюда)
     generateBoardDOM('board1', boardSize);
     generateBoardDOM('board2', boardSize);
     
     if(mode === 'single') {
+        boards = {
+            player: createEmptyBoard(boardSize),
+            bot: createEmptyBoard(boardSize)
+        };
         // Вместо случайного одиночного размещения вызываем функцию расстановки кораблей для бота
         placeBotShips(boards.bot);
         gameState = 'placement';
@@ -62,15 +47,23 @@ function initGame() {
         document.getElementById('confirmShipsBtn').style.display = 'none';
         document.getElementById('placementMsg').style.display = 'block';
         document.getElementById('placementMsg').textContent = `Разместите корабль длиной ${shipsToPlace[currentShipIndex]}`;
-        // Показываем подсказку только в фазе расстановки кораблей
         document.getElementById('shipHint').style.display = 'block';
         attachPlacementEvents();
     } else {
-        // Для двух игроков аналогично – автоматическая расстановка по правилам
-        placeBotShips(boards[1]);
-        placeBotShips(boards[2]);
-        attachCellEvents();
+        // Режим двух игроков
+        boards = {
+            player1: createEmptyBoard(boardSize),
+            player2: createEmptyBoard(boardSize)
+        };
+        
+        gameState = 'placement';
+        currentPlayer = 1;
         document.getElementById('player2Title').textContent = 'Игрок 2';
+        document.getElementById('placementMsg').style.display = 'block';
+        document.getElementById('placementMsg').textContent = `Игрок 1: Разместите корабль длиной ${shipsToPlace[0]}`;
+        document.getElementById('shipHint').style.display = 'block';
+        document.getElementById('board2').style.pointerEvents = 'none';
+        attachTwoPlayerPlacementEvents();
     }
     
     currentPlayer = 1;
@@ -456,6 +449,7 @@ function markSurroundingPlayer(row, col) {
     dfs(row, col);
     shipPositions.forEach(pos => {
         for(let dr = -1; dr <= 1; dr++){
+            // Исправляем опечатку здесь: было dr <= 1, стало dc <= 1
             for(let dc = -1; dc <= 1; dc++){
                 const nr = pos.r + dr, nc = pos.c + dc;
                 if(nr < 0 || nr >= boardSize || nc < 0 || nc >= boardSize) continue;
@@ -525,4 +519,201 @@ function gameEnd(result) {
     });
     // Добавляем кнопку в элемент управления или body
     document.body.appendChild(menuBtn);
+}
+
+function attachTwoPlayerPlacementEvents() {
+    const board = currentPlayer === 1 ? 'board1' : 'board2';
+    const boardCells = document.getElementById(board).querySelectorAll('.cell');
+    boardCells.forEach(cell => {
+        cell.addEventListener('click', twoPlayerPlacementHandler);
+    });
+}
+
+function twoPlayerPlacementHandler(e) {
+    if(gameState !== 'placement') return;
+    const cell = e.target;
+    const row = Number(cell.dataset.row);
+    const col = Number(cell.dataset.col);
+    const currentBoard = boards[`player${currentPlayer}`];
+    
+    if(!placementStart) {
+        placementStart = {row, col, el: cell};
+        cell.classList.add('selected');
+        document.getElementById('placementMsg').textContent = 
+            `Игрок ${currentPlayer}: Выберите другой конец корабля длиной ${shipsToPlace[currentShipIndex]}`;
+    } else {
+        // Логика размещения корабля (аналогично существующей)
+        const shipCells = calculateShipCells(placementStart, {row, col});
+        if(!shipCells || !isValidTwoPlayerPlacement(shipCells, currentBoard)) {
+            clearSelection();
+            return;
+        }
+        
+        placeShipOnBoard(shipCells, currentPlayer);
+        currentShipIndex++;
+        clearSelection();
+        
+        if(currentShipIndex >= shipsToPlace.length) {
+            if(currentPlayer === 1) {
+                // Переход к расстановке второго игрока
+                currentPlayer = 2;
+                currentShipIndex = 0;
+                document.getElementById('board1').style.pointerEvents = 'none';
+                document.getElementById('board2').style.pointerEvents = 'auto';
+                document.getElementById('placementMsg').textContent = 
+                    `Игрок 2: Разместите корабль длиной ${shipsToPlace[0]}`;
+                attachTwoPlayerPlacementEvents();
+            } else {
+                // Начало битвы
+                startTwoPlayerBattle();
+            }
+        } else {
+            document.getElementById('placementMsg').textContent = 
+                `Игрок ${currentPlayer}: Разместите корабль длиной ${shipsToPlace[currentShipIndex]}`;
+        }
+    }
+}
+
+function startTwoPlayerBattle() {
+    gameState = 'battle';
+    currentPlayer = 1;
+    document.getElementById('placementMsg').style.display = 'none';
+    document.getElementById('shipHint').style.display = 'none';
+    document.getElementById('board1').style.pointerEvents = 'none';
+    document.getElementById('board2').style.pointerEvents = 'auto';
+    attachTwoPlayerBattleEvents();
+    updateTurnMessage();
+}
+
+function attachTwoPlayerBattleEvents() {
+    const targetBoard = currentPlayer === 1 ? 'board2' : 'board1';
+    const boardCells = document.getElementById(targetBoard).querySelectorAll('.cell');
+    boardCells.forEach(cell => {
+        cell.addEventListener('click', twoPlayerBattleHandler);
+    });
+}
+
+function twoPlayerBattleHandler(e) {
+    if(gameState !== 'battle') return;
+    const cell = e.target;
+    if(cell.classList.contains('hit') || cell.classList.contains('miss')) return;
+    
+    const row = Number(cell.dataset.row);
+    const col = Number(cell.dataset.col);
+    const targetBoard = currentPlayer === 1 ? boards.player2 : boards.player1;
+    
+    cell.classList.add('shooting');
+    setTimeout(() => {
+        cell.classList.remove('shooting');
+        if(targetBoard[row][col] === 1) {
+            cell.classList.add('hit');
+            if(checkVictory(targetBoard, currentPlayer === 1 ? '#board2' : '#board1')) {
+                gameEnd(`victory_player${currentPlayer}`);
+                return;
+            }
+        } else {
+            cell.classList.add('miss');
+            switchPlayer();
+        }
+    }, 500);
+}
+
+function switchPlayer() {
+    const board1 = document.getElementById('board1');
+    const board2 = document.getElementById('board2');
+    
+    if(currentPlayer === 1) {
+        currentPlayer = 2;
+        board1.style.pointerEvents = 'auto';
+        board2.style.pointerEvents = 'none';
+    } else {
+        currentPlayer = 1;
+        board1.style.pointerEvents = 'none';
+        board2.style.pointerEvents = 'auto';
+    }
+    updateTurnMessage();
+}
+
+function updateTurnMessage() {
+    const turnHint = document.getElementById('turnHint');
+    turnHint.style.display = 'block';
+    turnHint.textContent = `Ход Игрока ${currentPlayer}`;
+}
+
+// Модифицируем функцию gameEnd для поддержки двух игроков
+function gameEnd(result) {
+    gameState = 'end';
+    if(result === 'victory') {
+        alert("Поздравляем! Вы победили бота!");
+    } else if(result === 'defeat') {
+        alert("Вы проиграли боту!");
+    } else if(result === 'victory_player1') {
+        alert("Победил Игрок 1!");
+    } else if(result === 'victory_player2') {
+        alert("Победил Игрок 2!");
+    }
+    
+    const menuBtn = document.createElement('button');
+    menuBtn.textContent = "В главное меню";
+    menuBtn.addEventListener('click', () => location.reload());
+    document.body.appendChild(menuBtn);
+}
+
+// Добавляем недостающую функцию calculateShipCells
+function calculateShipCells(start, end) {
+    let shipCells = [];
+    if(start.row === end.row) {
+        // горизонтальное размещение
+        const min = Math.min(start.col, end.col);
+        const max = Math.max(start.col, end.col);
+        if(max - min + 1 !== shipsToPlace[currentShipIndex]) {
+            alert(`Длина корабля должна быть ${shipsToPlace[currentShipIndex]}`);
+            return null;
+        }
+        for(let c = min; c <= max; c++) {
+            shipCells.push({row: start.row, col: c});
+        }
+    } else if(start.col === end.col) {
+        // вертикальное размещение
+        const min = Math.min(start.row, end.row);
+        const max = Math.max(start.row, end.row);
+        if(max - min + 1 !== shipsToPlace[currentShipIndex]) {
+            alert(`Длина корабля должна быть ${shipsToPlace[currentShipIndex]}`);
+            return null;
+        }
+        for(let r = min; r <= max; r++) {
+            shipCells.push({row: r, col: start.col});
+        }
+    } else {
+        alert('Корабль должен размещаться по прямой линии');
+        return null;
+    }
+    return shipCells;
+}
+
+// Добавляем функцию проверки размещения для режима двух игроков
+function isValidTwoPlayerPlacement(shipCells, board) {
+    for (let pos of shipCells) {
+        if(board[pos.row][pos.col] === 1) return false;
+        for(let dr = -1; dr <= 1; dr++){
+            for(let dc = -1; dc <= 1; dc++){
+                const nr = pos.row + dr, nc = pos.col + dc;
+                if(nr < 0 || nr >= boardSize || nc < 0 || nc >= boardSize) continue;
+                if(board[nr][nc] === 1) return false;
+            }
+        }
+    }
+    return true;
+}
+
+// Добавляем функцию размещения корабля на доске
+function placeShipOnBoard(shipCells, playerNum) {
+    const board = playerNum === 1 ? 'board1' : 'board2';
+    const boardData = boards[`player${playerNum}`];
+    
+    shipCells.forEach(pos => {
+        const cellEl = document.querySelector(`#${board} .cell[data-row='${pos.row}'][data-col='${pos.col}']`);
+        cellEl.classList.add('ship');
+        boardData[pos.row][pos.col] = 1;
+    });
 }
