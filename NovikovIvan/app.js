@@ -1,11 +1,17 @@
-function appSeaBattle(containerId) {
+function appSeaBattle(containerId, cssPath = 'app.css') {
+    if (cssPath) {
+        const linkElement = document.createElement('link');
+        linkElement.rel = 'stylesheet';
+        linkElement.href = cssPath;
+        document.head.appendChild(linkElement);
+    }
+
     const container = document.getElementById(containerId);
     if (!container) {
         console.error(`Container with id "${containerId}" not found`);
         return "Sea Battle";
     }
     
-    // Создаем элемент-обертку
     const wrapper = document.createElement('div');
     wrapper.className = 'sea-battle-wrapper';
     container.appendChild(wrapper);
