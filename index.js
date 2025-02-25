@@ -8,6 +8,8 @@ let boards = {};
 let shipPlacementPhase = false;
 const shipsCount = () => Math.floor(boardSize / 2);
 
+let player1Shots = [];  // выстрелы первого игрока
+let player2Shots = [];  // выстрелы второго игрока
 
 let gameState = 'setup'; 
 let shipsToPlace = [];
@@ -50,6 +52,8 @@ function initGame() {
             player1: createEmptyBoard(boardSize),
             player2: createEmptyBoard(boardSize)
         };
+        player1Shots = createEmptyBoard(boardSize);
+        player2Shots = createEmptyBoard(boardSize);
         
         document.getElementById('board1').style.display = 'grid';
         document.getElementById('board2').style.display = 'grid';
@@ -562,9 +566,10 @@ function startTwoPlayerBattle() {
         () => {
             document.getElementById('placementMsg').style.display = 'none';
             document.getElementById('shipHint').style.display = 'none';
+            updateBoardsDisplay();
             document.getElementById('board1').style.visibility = 'visible';
             document.getElementById('board2').style.visibility = 'visible';
-            hideShips();
+            // Не скрываем корабли на своём поле
             attachTwoPlayerBattleEvents();
             updateTurnMessage();
         }
@@ -572,10 +577,10 @@ function startTwoPlayerBattle() {
 }
 
 function hideShips() {
-    const ships1 = document.getElementById('board1').querySelectorAll('.ship:not(.hit)'); 
-    const ships2 = document.getElementById('board2').querySelectorAll('.ship:not(.hit)');
-    [...ships1, ...ships2].forEach(cell => {
-        cell.style.backgroundColor = '#add8e6'; 
+    const targetBoard = currentPlayer === 1 ? 'board2' : 'board1';
+    const ships = document.getElementById(targetBoard).querySelectorAll('.ship:not(.hit)');
+    ships.forEach(cell => {
+        cell.style.backgroundColor = '#add8e6';
     });
 }
 
@@ -583,6 +588,7 @@ function attachTwoPlayerBattleEvents() {
     const board1Cells = document.getElementById('board1').querySelectorAll('.cell');
     const board2Cells = document.getElementById('board2').querySelectorAll('.cell');
     
+    // Удаляем все обработчики
     board1Cells.forEach(cell => {
         cell.removeEventListener('click', twoPlayerBattleHandler);
     });
@@ -590,11 +596,16 @@ function attachTwoPlayerBattleEvents() {
         cell.removeEventListener('click', twoPlayerBattleHandler);
     });
     
-    const targetBoard = currentPlayer === 1 ? 'board2' : 'board1';
-    const targetCells = document.getElementById(targetBoard).querySelectorAll('.cell');
-    targetCells.forEach(cell => {
-        cell.addEventListener('click', twoPlayerBattleHandler);
-    });
+    // Добавляем обработчики только на поле противника
+    if(currentPlayer === 1) {
+        board2Cells.forEach(cell => {
+            cell.addEventListener('click', twoPlayerBattleHandler);
+        });
+    } else {
+        board1Cells.forEach(cell => {
+            cell.addEventListener('click', twoPlayerBattleHandler);
+        });
+    }
 }
 
 function twoPlayerBattleHandler(e) {
@@ -606,10 +617,15 @@ function twoPlayerBattleHandler(e) {
     const col = Number(cell.dataset.col);
     const targetBoard = currentPlayer === 1 ? boards.player2 : boards.player1;
     
+    // Проверяем, не было ли уже выстрела в эту клетку
+    const shotsArray = currentPlayer === 1 ? player1Shots : player2Shots;
+    if(shotsArray[row][col] !== 0) return;
+    
     cell.classList.add('shooting');
     setTimeout(() => {
         cell.classList.remove('shooting');
         if(targetBoard[row][col] === 1) {
+            shotsArray[row][col] = 2; // 2 = попадание
             cell.classList.add('hit');
             cell.classList.add('ship'); 
             if(isTwoPlayerShipSunk(row, col, targetBoard, currentPlayer === 1 ? '#board2' : '#board1')) {
@@ -620,6 +636,7 @@ function twoPlayerBattleHandler(e) {
                 return;
             }
         } else {
+            shotsArray[row][col] = 1; // 1 = промах
             cell.classList.add('miss');
             switchPlayer();
         }
@@ -695,10 +712,9 @@ function switchPlayer() {
         showTransitionScreen(
             "Передайте устройство Игроку 2",
             () => {
+                updateBoardsDisplay();
                 document.getElementById('board1').style.visibility = 'visible';
                 document.getElementById('board2').style.visibility = 'visible';
-                document.getElementById('board1').style.pointerEvents = 'auto';
-                document.getElementById('board2').style.pointerEvents = 'none';
                 attachTwoPlayerBattleEvents();
                 updateTurnMessage();
             }
@@ -708,10 +724,9 @@ function switchPlayer() {
         showTransitionScreen(
             "Передайте устройство Игроку 1",
             () => {
+                updateBoardsDisplay();
                 document.getElementById('board1').style.visibility = 'visible';
                 document.getElementById('board2').style.visibility = 'visible';
-                document.getElementById('board1').style.pointerEvents = 'none';
-                document.getElementById('board2').style.pointerEvents = 'auto';
                 attachTwoPlayerBattleEvents();
                 updateTurnMessage();
             }
@@ -818,5 +833,103 @@ function showTransitionScreen(message, callback) {
     newReadyBtn.addEventListener('click', () => {
         transitionScreen.style.display = 'none';
         if (callback) callback();
+    });
+}
+
+function updateBoardsDisplay() {
+    const board1 = document.getElementById('board1');
+    const board2 = document.getElementById('board2');
+    const player1Title = document.querySelector('#player1 h2');
+    const player2Title = document.querySelector('#player2 h2');
+
+    if (currentPlayer === 1) {
+        // Для первого игрока
+        player1Title.textContent = 'Ваше поле (Игрок 1)';
+        player2Title.textContent = 'Поле противника (Игрок 2)';
+        
+        // Левое поле - корабли первого игрока и выстрелы второго игрока
+        board1.innerHTML = '';
+        generateBoardDOM('board1', boardSize);
+        board1.querySelectorAll('.cell').forEach(cell => {
+            const row = Number(cell.dataset.row);
+            const col = Number(cell.dataset.col);
+            if (boards.player1[row][col] === 1) {
+                cell.classList.add('ship');
+                cell.style.backgroundColor = '#00008b';
+            }
+            // Отображаем выстрелы второго игрока
+            if (player2Shots[row][col] === 2) cell.classList.add('hit');
+            if (player2Shots[row][col] === 1) cell.classList.add('miss');
+        });
+        
+        // Правое поле - выстрелы первого игрока по второму игроку
+        board2.innerHTML = '';
+        generateBoardDOM('board2', boardSize);
+        board2.querySelectorAll('.cell').forEach(cell => {
+            const row = Number(cell.dataset.row);
+            const col = Number(cell.dataset.col);
+            if (player1Shots[row][col] === 2) {
+                cell.classList.add('hit');
+                if (boards.player2[row][col] === 1) cell.classList.add('ship');
+            }
+            if (player1Shots[row][col] === 1) cell.classList.add('miss');
+        });
+    } else {
+        // Для второго игрока
+        player1Title.textContent = 'Ваше поле (Игрок 2)';
+        player2Title.textContent = 'Поле противника (Игрок 1)';
+        
+        // Левое поле - корабли второго игрока и выстрелы первого игрока
+        board1.innerHTML = '';
+        generateBoardDOM('board1', boardSize);
+        board1.querySelectorAll('.cell').forEach(cell => {
+            const row = Number(cell.dataset.row);
+            const col = Number(cell.dataset.col);
+            if (boards.player2[row][col] === 1) {
+                cell.classList.add('ship');
+                cell.style.backgroundColor = '#00008b';
+            }
+            // Отображаем выстрелы первого игрока
+            if (player1Shots[row][col] === 2) cell.classList.add('hit');
+            if (player1Shots[row][col] === 1) cell.classList.add('miss');
+        });
+        
+        // Правое поле - выстрелы второго игрока по первому игроку
+        board2.innerHTML = '';
+        generateBoardDOM('board2', boardSize);
+        board2.querySelectorAll('.cell').forEach(cell => {
+            const row = Number(cell.dataset.row);
+            const col = Number(cell.dataset.col);
+            if (player2Shots[row][col] === 2) {
+                cell.classList.add('hit');
+                if (boards.player1[row][col] === 1) cell.classList.add('ship');
+            }
+            if (player2Shots[row][col] === 1) cell.classList.add('miss');
+        });
+    }
+
+    // Настройка кликабельности
+    board1.style.pointerEvents = 'none';  // своё поле не кликабельно
+    board2.style.pointerEvents = 'auto';  // поле противника кликабельно
+
+    // Обновляем обработчики событий
+    attachTwoPlayerBattleEvents();
+}
+
+function attachTwoPlayerBattleEvents() {
+    const board1Cells = document.getElementById('board1').querySelectorAll('.cell');
+    const board2Cells = document.getElementById('board2').querySelectorAll('.cell');
+    
+    // Удаляем все старые обработчики
+    board1Cells.forEach(cell => {
+        cell.removeEventListener('click', twoPlayerBattleHandler);
+    });
+    board2Cells.forEach(cell => {
+        cell.removeEventListener('click', twoPlayerBattleHandler);
+    });
+    
+    // Добавляем обработчики только на правое поле (поле противника)
+    board2Cells.forEach(cell => {
+        cell.addEventListener('click', twoPlayerBattleHandler);
     });
 }
