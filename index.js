@@ -542,25 +542,33 @@ function twoPlayerPlacementHandler(e) {
 function switchToSecondPlayer() {
     currentPlayer = 2;
     currentShipIndex = 0;
-    document.getElementById('board1').style.visibility = 'hidden';
-    document.getElementById('board2').style.visibility = 'visible';
-    document.getElementById('placementMsg').textContent = `Игрок 2: Разместите корабль длиной ${shipsToPlace[0]}`;
-    clearSelection();
-    attachTwoPlayerPlacementEvents();
+    showTransitionScreen(
+        "Передайте устройство Игроку 2 для расстановки кораблей",
+        () => {
+            document.getElementById('board1').style.visibility = 'hidden';
+            document.getElementById('board2').style.visibility = 'visible';
+            document.getElementById('placementMsg').textContent = `Игрок 2: Разместите корабль длиной ${shipsToPlace[0]}`;
+            clearSelection();
+            attachTwoPlayerPlacementEvents();
+        }
+    );
 }
 
 function startTwoPlayerBattle() {
     gameState = 'battle';
     currentPlayer = 1;
-    document.getElementById('placementMsg').style.display = 'none';
-    document.getElementById('shipHint').style.display = 'none';
-    
-    document.getElementById('board1').style.visibility = 'visible';
-    document.getElementById('board2').style.visibility = 'visible';
-    
-    hideShips();
-    attachTwoPlayerBattleEvents();
-    updateTurnMessage();
+    showTransitionScreen(
+        "Начинаем битву! Передайте устройство Игроку 1",
+        () => {
+            document.getElementById('placementMsg').style.display = 'none';
+            document.getElementById('shipHint').style.display = 'none';
+            document.getElementById('board1').style.visibility = 'visible';
+            document.getElementById('board2').style.visibility = 'visible';
+            hideShips();
+            attachTwoPlayerBattleEvents();
+            updateTurnMessage();
+        }
+    );
 }
 
 function hideShips() {
@@ -682,21 +690,33 @@ function markTwoPlayerSurrounding(row, col, board, boardSelector) {
 }
 
 function switchPlayer() {
-    const board1 = document.getElementById('board1');
-    const board2 = document.getElementById('board2');
-    
     if(currentPlayer === 1) {
         currentPlayer = 2;
-        board1.style.pointerEvents = 'auto';
-        board2.style.pointerEvents = 'none';
+        showTransitionScreen(
+            "Передайте устройство Игроку 2",
+            () => {
+                document.getElementById('board1').style.visibility = 'visible';
+                document.getElementById('board2').style.visibility = 'visible';
+                document.getElementById('board1').style.pointerEvents = 'auto';
+                document.getElementById('board2').style.pointerEvents = 'none';
+                attachTwoPlayerBattleEvents();
+                updateTurnMessage();
+            }
+        );
     } else {
         currentPlayer = 1;
-        board1.style.pointerEvents = 'none';
-        board2.style.pointerEvents = 'auto';
+        showTransitionScreen(
+            "Передайте устройство Игроку 1",
+            () => {
+                document.getElementById('board1').style.visibility = 'visible';
+                document.getElementById('board2').style.visibility = 'visible';
+                document.getElementById('board1').style.pointerEvents = 'none';
+                document.getElementById('board2').style.pointerEvents = 'auto';
+                attachTwoPlayerBattleEvents();
+                updateTurnMessage();
+            }
+        );
     }
-    
-    attachTwoPlayerBattleEvents();
-    updateTurnMessage();
 }
 
 function updateTurnMessage() {
@@ -775,5 +795,28 @@ function placeShipOnBoard(shipCells, playerNum) {
         const cellEl = document.querySelector(`#${board} .cell[data-row='${pos.row}'][data-col='${pos.col}']`);
         cellEl.classList.add('ship');
         boardData[pos.row][pos.col] = 1;
+    });
+}
+
+// Добавляем новые функции для управления экраном перехода
+function showTransitionScreen(message, callback) {
+    const transitionScreen = document.getElementById('transition-screen');
+    const transitionMessage = document.getElementById('transition-message');
+    const readyBtn = document.getElementById('ready-btn');
+    
+    // Скрываем игровые поля
+    document.getElementById('board1').style.visibility = 'hidden';
+    document.getElementById('board2').style.visibility = 'hidden';
+    
+    transitionMessage.textContent = message;
+    transitionScreen.style.display = 'flex';
+    
+    // Очищаем предыдущий обработчик
+    const newReadyBtn = readyBtn.cloneNode(true);
+    readyBtn.parentNode.replaceChild(newReadyBtn, readyBtn);
+    
+    newReadyBtn.addEventListener('click', () => {
+        transitionScreen.style.display = 'none';
+        if (callback) callback();
     });
 }
