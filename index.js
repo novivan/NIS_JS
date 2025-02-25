@@ -616,9 +616,8 @@ function twoPlayerBattleHandler(e) {
     const row = Number(cell.dataset.row);
     const col = Number(cell.dataset.col);
     const targetBoard = currentPlayer === 1 ? boards.player2 : boards.player1;
-    
-    // Проверяем, не было ли уже выстрела в эту клетку
     const shotsArray = currentPlayer === 1 ? player1Shots : player2Shots;
+    
     if(shotsArray[row][col] !== 0) return;
     
     cell.classList.add('shooting');
@@ -627,10 +626,13 @@ function twoPlayerBattleHandler(e) {
         if(targetBoard[row][col] === 1) {
             shotsArray[row][col] = 2; // 2 = попадание
             cell.classList.add('hit');
-            cell.classList.add('ship'); 
-            if(isTwoPlayerShipSunk(row, col, targetBoard, currentPlayer === 1 ? '#board2' : '#board1')) {
-                markTwoPlayerSurrounding(row, col, targetBoard, currentPlayer === 1 ? '#board2' : '#board1');
+            cell.classList.add('ship');
+            
+            // Проверяем, не потоплен ли корабль
+            if(isShipDestroyed(row, col, targetBoard)) {
+                markDestroyedShipArea(row, col, targetBoard, shotsArray);
             }
+            
             if(checkVictory(targetBoard, currentPlayer === 1 ? '#board2' : '#board1')) {
                 gameEnd(`victory_player${currentPlayer}`);
                 return;
@@ -643,6 +645,81 @@ function twoPlayerBattleHandler(e) {
     }, 500);
 }
 
+// Добавляем новые функции для обработки уничтоженных кораблей
+function isShipDestroyed(row, col, board) {
+    const visited = new Set();
+    const shipCells = [];
+    
+    function dfs(r, c) {
+        const key = `${r},${c}`;
+        if(visited.has(key)) return;
+        visited.add(key);
+        
+        if(board[r][c] === 1) {
+            shipCells.push({row: r, col: c});
+            // Проверяем соседние клетки
+            [[0,1], [0,-1], [1,0], [-1,0]].forEach(([dr, dc]) => {
+                const newR = r + dr;
+                const newC = c + dc;
+                if(newR >= 0 && newR < boardSize && newC >= 0 && newC < boardSize && board[newR][newC] === 1) {
+                    dfs(newR, newC);
+                }
+            });
+        }
+    }
+    
+    dfs(row, col);
+    
+    // Проверяем, все ли клетки корабля поражены
+    const shotsArray = currentPlayer === 1 ? player1Shots : player2Shots;
+    return shipCells.every(cell => shotsArray[cell.row][cell.col] === 2);
+}
+
+function markDestroyedShipArea(row, col, board, shotsArray) {
+    const visited = new Set();
+    const shipCells = [];
+    
+    // Сначала находим все клетки корабля
+    function findShip(r, c) {
+        const key = `${r},${c}`;
+        if(visited.has(key)) return;
+        visited.add(key);
+        
+        if(board[r][c] === 1) {
+            shipCells.push({row: r, col: c});
+            [[0,1], [0,-1], [1,0], [-1,0]].forEach(([dr, dc]) => {
+                const newR = r + dr;
+                const newC = c + dc;
+                if(newR >= 0 && newR < boardSize && newC >= 0 && newC < boardSize && board[newR][newC] === 1) {
+                    findShip(newR, newC);
+                }
+            });
+        }
+    }
+    
+    findShip(row, col);
+    
+    // Отмечаем все клетки вокруг корабля как промахи на правой доске
+    shipCells.forEach(({row, col}) => {
+        for(let dr = -1; dr <= 1; dr++) {
+            for(let dc = -1; dc <= 1; dc++) {
+                const newR = row + dr;
+                const newC = col + dc;
+                if(newR >= 0 && newR < boardSize && newC >= 0 && newC < boardSize) {
+                    // Если клетка не является частью корабля и ещё не отмечена
+                    if(board[newR][newC] !== 1 && shotsArray[newR][newC] === 0) {
+                        shotsArray[newR][newC] = 1; // отмечаем как промах
+                        // Обновляем отображение на правой доске
+                        const cell = document.querySelector(`#board2 .cell[data-row='${newR}'][data-col='${newC}']`);
+                        if(cell) {
+                            cell.classList.add('miss');
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
 
 function isTwoPlayerShipSunk(row, col, board, boardSelector) {
     let shipCells = [];
@@ -694,7 +771,7 @@ function markTwoPlayerSurrounding(row, col, board, boardSelector) {
     dfs(row, col);
     shipPositions.forEach(pos => {
         for(let dr = -1; dr <= 1; dr++) {
-            for(let dc = -1; dc <= 1; dc++) {
+            for(let dc = -1; dc <= 1; dc++){
                 const nr = pos.r + dr, nc = pos.c + dc;
                 if(nr < 0 || nr >= boardSize || nc < 0 || nc >= boardSize) continue;
                 let neighbor = document.querySelector(`${boardSelector} .cell[data-row='${nr}'][data-col='${nc}']`);
