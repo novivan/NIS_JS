@@ -14,7 +14,7 @@ body {
     gap: 1px;
     background: #333;
     margin: 0 auto;
-    min-width: 300px; /* Добавляем минимальную ширину */
+    min-width: 300px;
 }
 .cell {
     width: 30px;
@@ -23,7 +23,10 @@ body {
     cursor: pointer;
 }
 .cell.hit {
-    background: red;
+    background: red !important;
+}
+.cell.hit.ship {
+    background: darkred !important;
 }
 .cell.miss {
     background: #ccc;
@@ -61,7 +64,6 @@ body {
     position: relative;
 }
 
-/* Разные цвета для выстрелов игрока и бота */
 #board2 .cell.shooting {
     box-shadow: 0 0 20px 10px rgba(0, 255, 0, 0.5);
 }
@@ -70,13 +72,10 @@ body {
     box-shadow: 0 0 20px 10px rgba(255, 0, 0, 0.5);
 }
 
-/* Новые стили для перекрашивания клеток при попадании */
-/* Для поля игрока (при попадании бота) */
 #board1 .cell.hit {
     background-color: darkorchid;
 }
 
-/* Для поля бота (при попадании игрока) */
 #board2 .cell.hit {
     background-color: orangered;
 }

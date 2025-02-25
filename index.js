@@ -2,23 +2,22 @@ document.getElementById('startBtn').addEventListener('click', initGame);
 
 let boardSize, mode;
 let currentPlayer = 1;
-let isBotMoving = false; // Новый флаг для отслеживания хода бота
-let playerCanShoot = true; // Новый флаг для контроля возможности выстрела игрока
-let boards = {}; // boards.player и boards.bot для режима single
+let isBotMoving = false; 
+let playerCanShoot = true; 
+let boards = {}; 
 let shipPlacementPhase = false;
 const shipsCount = () => Math.floor(boardSize / 2);
 
-// Новые переменные для state machine и расстановки кораблей
-let gameState = 'setup'; // 'placement', 'battle', 'end'
+
+let gameState = 'setup'; 
 let shipsToPlace = [];
 let currentShipIndex = 0;
-let placementStart = null; // {row, col, el}
+let placementStart = null;
 
 function initGame() {
     mode = document.getElementById('mode').value;
     boardSize = parseInt(document.getElementById('boardSize').value);
     
-    // Определяем набор кораблей в зависимости от размера поля
     if (boardSize === 10) {
         shipsToPlace = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]; 
     } else if (boardSize === 15) {
@@ -27,11 +26,9 @@ function initGame() {
         shipsToPlace = [10, 9, 8, 8, 7, 7, 6, 6, 5, 5, 4, 4, 3];
     }
     
-    // Очистка полей
     document.getElementById('board1').innerHTML = '';
     document.getElementById('board2').innerHTML = '';
     
-    // Генерация DOM - ЕДИНОЖДЫ для обоих полей
     generateBoardDOM('board1', boardSize);
     generateBoardDOM('board2', boardSize);
     
@@ -40,7 +37,6 @@ function initGame() {
             player: createEmptyBoard(boardSize),
             bot: createEmptyBoard(boardSize)
         };
-        // Вместо случайного одиночного размещения вызываем функцию расстановки кораблей для бота
         placeBotShips(boards.bot);
         gameState = 'placement';
         currentShipIndex = 0;
@@ -50,16 +46,13 @@ function initGame() {
         document.getElementById('shipHint').style.display = 'block';
         attachPlacementEvents();
     } else {
-        // Режим двух игроков
         boards = {
             player1: createEmptyBoard(boardSize),
             player2: createEmptyBoard(boardSize)
         };
         
-        // Восстанавливаем стили отображения для обоих полей
         document.getElementById('board1').style.display = 'grid';
         document.getElementById('board2').style.display = 'grid';
-        // Скрываем только поле второго игрока
         document.getElementById('board2').style.visibility = 'hidden';
         
         gameState = 'placement';
@@ -84,11 +77,10 @@ function createEmptyBoard(size) {
 
 function generateBoardDOM(elementId, size) {
     const boardContainer = document.getElementById(elementId);
-    // Убедимся, что предыдущие стили очищены
     boardContainer.style.cssText = '';
     boardContainer.style.gridTemplateColumns = `repeat(${size}, 30px)`;
     
-    boardContainer.innerHTML = ''; // Очищаем содержимое перед генерацией
+    boardContainer.innerHTML = '';
     
     for (let i = 0; i < size; i++) {
         for (let j = 0; j < size; j++) {
@@ -101,7 +93,6 @@ function generateBoardDOM(elementId, size) {
     }
 }
 
-// Новая функция для автоматической расстановки кораблей по правилам
 function placeBotShips(board) {
     shipsToPlace.forEach(function(shipLength) {
         let placed = false;
@@ -157,7 +148,8 @@ function placementHandler(e) {
     const cell = e.target;
     const row = Number(cell.dataset.row);
     const col = Number(cell.dataset.col);
-    // Если клетка уже занята кораблём, пропускаем
+
+
     if(cell.classList.contains('ship')) return;
     
     if(!placementStart) {
@@ -170,14 +162,12 @@ function placementHandler(e) {
         const start = placementStart;
         let shipCells = [];
         if(start.row === row) {
-            // горизонтальное размещение
             const min = Math.min(start.col, col);
             const max = Math.max(start.col, col);
             for(let c = min; c <= max; c++){
                 shipCells.push({row: row, col: c});
             }
         } else if(start.col === col) {
-            // вертикальное размещение
             const min = Math.min(start.row, row);
             const max = Math.max(start.row, row);
             for(let r = min; r <= max; r++){
@@ -188,19 +178,16 @@ function placementHandler(e) {
             clearSelection();
             return;
         }
-        // Проверяем соответствие требуемой длине
         if(shipCells.length !== shipsToPlace[currentShipIndex]){
             alert(`Длина выбранного корабля должна быть ${shipsToPlace[currentShipIndex]}`);
             clearSelection();
             return;
         }
-        // Проверка: корабли не должны касаться (включая диагонали)
         if(!isValidPlacement(shipCells)) {
             alert('Нельзя ставить корабли вплотную друг к другу или перекрывать их.');
             clearSelection();
             return;
         }
-        // Размещаем корабль
         shipCells.forEach(pos => {
             const cellEl = document.querySelector(`#board1 .cell[data-row='${pos.row}'][data-col='${pos.col}']`);
             cellEl.classList.add('ship');
@@ -211,21 +198,18 @@ function placementHandler(e) {
         const msg = document.getElementById('placementMsg');
         if(currentShipIndex < shipsToPlace.length) {
             msg.textContent = `Разместите корабль длиной ${shipsToPlace[currentShipIndex]}`;
-            msg.classList.remove('smaller'); // Вернуть обычный размер для следующей подсказки, если требуется
+            msg.classList.remove('smaller');
         } else {
-            // Переводим игру в фазу боя, скрываем подсказку для расстановки
             gameState = 'battle';
             document.getElementById('placementMsg').style.display = 'none';
             document.getElementById('shipHint').style.display = 'none';
             detachPlacementEvents();
-            // Восстанавливаем возможность клика по полю противника
             document.getElementById('board2').style.pointerEvents = 'auto';
             attachShootingEvents();
         }
     }
 }
 
-// Изменяем функцию clearSelection для поддержки двух игроков
 function clearSelection() {
     const board = mode === 'single' ? 'board1' : `board${currentPlayer}`;
     const selected = document.getElementById(board).querySelectorAll('.cell.selected');
@@ -233,11 +217,9 @@ function clearSelection() {
     placementStart = null;
 }
 
-// Проверка корректности расстановки корабля: клетка и все её соседние не должны быть заняты
 function isValidPlacement(shipCells) {
     for (let pos of shipCells) {
         if(boards.player[pos.row][pos.col] === 1) return false;
-        // Проверяем соседей (8 направлений)
         for(let dr = -1; dr <= 1; dr++){
             for(let dc = -1; dc <= 1; dc++){
                 let nr = pos.row + dr, nc = pos.col + dc;
@@ -249,35 +231,29 @@ function isValidPlacement(shipCells) {
     return true;
 }
 
-// Изменённый attachShootingEvents: в режиме 'battle' клики доступны только по полю бота
 function attachShootingEvents() {
     const boardCells = document.getElementById('board2').querySelectorAll('.cell');
     boardCells.forEach(cell => {
         cell.addEventListener('click', shootingHandler);
     });
-    // Отображаем подсказку для хода игрока
     document.getElementById('turnHint').style.display = 'block';
 }
 
-// Новая функция для отключения кликов по полю бота
 function detachShootingEvents() {
     const boardCells = document.getElementById('board2').querySelectorAll('.cell');
     boardCells.forEach(cell => {
         cell.removeEventListener('click', shootingHandler);
     });
-    // Скрываем подсказку, когда ход не игрока
     document.getElementById('turnHint').style.display = 'none';
 }
 
-// Изменённый обработчик выстрела игрока:
 function shootingHandler(e) {
     if(gameState !== 'battle' || isBotMoving || !playerCanShoot) {
         e.stopImmediatePropagation();
         e.preventDefault();
         return;
     }
-    // Убираем detachShootingEvents() здесь, чтобы не блокировать клики преждевременно
-    playerCanShoot = false; // блокируем повторный выстрел
+    playerCanShoot = false; 
     const cell = e.target;
     const row = Number(cell.dataset.row);
     const col = Number(cell.dataset.col);
@@ -295,7 +271,6 @@ function shootingHandler(e) {
                 gameEnd('victory');
                 return;
             }
-            // При попадании даём игроку возможность стрелять сразу
             setTimeout(() => {
                 playerCanShoot = true;
                 attachShootingEvents();
@@ -307,7 +282,6 @@ function shootingHandler(e) {
     }, 500);
 }
 
-// Функция проверки уничтожения корабля на поле бота (board2)
 function isShipSunk(row, col) {
     let shipCells = [];
     let visited = {};
@@ -333,7 +307,6 @@ function isShipSunk(row, col) {
     return shipCells.every(cell => cell.classList.contains('hit'));
 }
 
-// Функция, которая для уничтоженного корабля на поле бота закрашивает все соседние клетки (все 8 направлений)
 function markSurrounding(row, col) {
     let shipPositions = [];
     let visited = {};
@@ -367,28 +340,24 @@ function markSurrounding(row, col) {
     });
 }
 
-// Аналогичная логика для хода бота: он ходит по полю игрока (board1)
 function botMove() {
-    isBotMoving = true; // Бот начинает ход
-    detachShootingEvents(); // отключаем клики по полю противника
-    document.getElementById('board2').style.pointerEvents = 'none'; // блокируем клики по полю противника
+    isBotMoving = true; 
+    detachShootingEvents(); 
+    document.getElementById('board2').style.pointerEvents = 'none';
     let row, col, cell;
     do {
         row = Math.floor(Math.random() * boardSize);
         col = Math.floor(Math.random() * boardSize);
         cell = document.querySelector(`#board1 .cell[data-row='${row}'][data-col='${col}']`);
-    } while(cell.classList.contains('hit') || cell.classList.contains('miss')); // удалена проверка на .ship
+    } while(cell.classList.contains('hit') || cell.classList.contains('miss')); 
     
-    // Делаем анимацию выстрела
+
     return new Promise(resolve => {
-        // Добавляем класс анимации
         cell.classList.add('shooting');
         
-        // Ждем окончания анимации
         setTimeout(() => {
             cell.classList.remove('shooting');
             
-            // Показываем результат выстрела
             if(boards.player[row][col] === 1) {
                 cell.classList.add('hit');
                 if(isShipSunkPlayer(row, col)) {
@@ -398,21 +367,20 @@ function botMove() {
                     gameEnd('defeat');
                     return;
                 }
-                // Бот стреляет снова при попадании
                 setTimeout(() => { botMove().then(resolve); }, 500);
             } else {
                 cell.classList.add('miss');
-                isBotMoving = false; // Бот завершил свои выстрелы, даём ход игроку
-                document.getElementById('board2').style.pointerEvents = 'auto'; // восстанавливаем клики по полю противника
-                attachShootingEvents(); // восстанавливаем обработчик кликов по клеткам
-                playerCanShoot = true; // разрешаем ход игрока после окончания хода бота
+                isBotMoving = false; 
+                document.getElementById('board2').style.pointerEvents = 'auto'; 
+                attachShootingEvents(); 
+                playerCanShoot = true; 
                 resolve();
             }
         }, 500);
     });
 }
 
-// Проверка уничтожения корабля на поле игрока (board1)
+
 function isShipSunkPlayer(row, col) {
     let shipCells = [];
     let visited = {};
@@ -438,7 +406,6 @@ function isShipSunkPlayer(row, col) {
     return shipCells.every(cell => cell.classList.contains('hit'));
 }
 
-// Закраска соседних клеток вокруг уничтоженного корабля игрока
 function markSurroundingPlayer(row, col) {
     let shipPositions = [];
     let visited = {};
@@ -460,7 +427,6 @@ function markSurroundingPlayer(row, col) {
     dfs(row, col);
     shipPositions.forEach(pos => {
         for(let dr = -1; dr <= 1; dr++){
-            // Исправляем опечатку здесь: было dr <= 1, стало dc <= 1
             for(let dc = -1; dc <= 1; dc++){
                 const nr = pos.r + dr, nc = pos.c + dc;
                 if(nr < 0 || nr >= boardSize || nc < 0 || nc >= boardSize) continue;
@@ -474,7 +440,6 @@ function markSurroundingPlayer(row, col) {
 }
 
 function attachCellEvents() {
-    // Для режима двух игроков (оригинальный обработчик)
     const board1Cells = document.getElementById('board1').querySelectorAll('.cell');
     board1Cells.forEach(cell => {
         cell.addEventListener('click', () => handlePlayerAction(1, cell));
@@ -486,7 +451,6 @@ function attachCellEvents() {
 }
 
 function handlePlayerAction(cell) {
-    // Игрок стреляет по доске бота ( режима single )
     const row = cell.dataset.row;
     const col = cell.dataset.col;
     if(cell.classList.contains('hit') || cell.classList.contains('miss')) return;
@@ -496,12 +460,11 @@ function handlePlayerAction(cell) {
     } else {
         cell.classList.add('miss');
     }
-    // Ход бота: стреляет по полю игрока (board1)
     setTimeout(botMove, 500);
 }
 
 
-// Функция проверки победы по заданной доске (board) и селектору DOM-контейнера
+
 function checkVictory(board, boardSelector) {
     for(let i = 0; i < boardSize; i++){
         for(let j = 0; j < boardSize; j++){
@@ -514,7 +477,7 @@ function checkVictory(board, boardSelector) {
     return true;
 }
 
-// Функция завершения игры. result = 'victory' или 'defeat'
+
 function gameEnd(result) {
     gameState = 'end';
     if(result === 'victory'){
@@ -522,13 +485,11 @@ function gameEnd(result) {
     } else {
         alert("Вы проиграли!");
     }
-    // Создаём кнопку "В главное меню"
     const menuBtn = document.createElement('button');
     menuBtn.textContent = "В главное меню";
     menuBtn.addEventListener('click', () => {
         location.reload();
     });
-    // Добавляем кнопку в элемент управления или body
     document.body.appendChild(menuBtn);
 }
 
@@ -547,7 +508,7 @@ function twoPlayerPlacementHandler(e) {
     const col = Number(cell.dataset.col);
     const currentBoard = boards[`player${currentPlayer}`];
     
-    if(cell.classList.contains('ship')) return; // Пропускаем, если клетка уже занята
+    if(cell.classList.contains('ship')) return;
     
     if(!placementStart) {
         placementStart = {row, col, el: cell};
@@ -555,7 +516,6 @@ function twoPlayerPlacementHandler(e) {
         document.getElementById('placementMsg').textContent = 
             `Игрок ${currentPlayer}: Выберите другой конец корабля длиной ${shipsToPlace[currentShipIndex]}`;
     } else {
-        // Логика размещения корабля (аналогично существующей)
         const shipCells = calculateShipCells(placementStart, {row, col});
         if(!shipCells || !isValidTwoPlayerPlacement(shipCells, currentBoard)) {
             clearSelection();
@@ -582,7 +542,6 @@ function twoPlayerPlacementHandler(e) {
 function switchToSecondPlayer() {
     currentPlayer = 2;
     currentShipIndex = 0;
-    // Используем visibility вместо display
     document.getElementById('board1').style.visibility = 'hidden';
     document.getElementById('board2').style.visibility = 'visible';
     document.getElementById('placementMsg').textContent = `Игрок 2: Разместите корабль длиной ${shipsToPlace[0]}`;
@@ -596,7 +555,6 @@ function startTwoPlayerBattle() {
     document.getElementById('placementMsg').style.display = 'none';
     document.getElementById('shipHint').style.display = 'none';
     
-    // Показываем оба поля
     document.getElementById('board1').style.visibility = 'visible';
     document.getElementById('board2').style.visibility = 'visible';
     
@@ -605,19 +563,28 @@ function startTwoPlayerBattle() {
     updateTurnMessage();
 }
 
-// Добавляем новую функцию для скрытия кораблей
 function hideShips() {
-    const ships1 = document.getElementById('board1').querySelectorAll('.ship');
-    const ships2 = document.getElementById('board2').querySelectorAll('.ship');
+    const ships1 = document.getElementById('board1').querySelectorAll('.ship:not(.hit)'); 
+    const ships2 = document.getElementById('board2').querySelectorAll('.ship:not(.hit)');
     [...ships1, ...ships2].forEach(cell => {
-        cell.style.backgroundColor = '#add8e6'; // Возвращаем стандартный цвет клетки
+        cell.style.backgroundColor = '#add8e6'; 
     });
 }
 
 function attachTwoPlayerBattleEvents() {
+    const board1Cells = document.getElementById('board1').querySelectorAll('.cell');
+    const board2Cells = document.getElementById('board2').querySelectorAll('.cell');
+    
+    board1Cells.forEach(cell => {
+        cell.removeEventListener('click', twoPlayerBattleHandler);
+    });
+    board2Cells.forEach(cell => {
+        cell.removeEventListener('click', twoPlayerBattleHandler);
+    });
+    
     const targetBoard = currentPlayer === 1 ? 'board2' : 'board1';
-    const boardCells = document.getElementById(targetBoard).querySelectorAll('.cell');
-    boardCells.forEach(cell => {
+    const targetCells = document.getElementById(targetBoard).querySelectorAll('.cell');
+    targetCells.forEach(cell => {
         cell.addEventListener('click', twoPlayerBattleHandler);
     });
 }
@@ -636,6 +603,10 @@ function twoPlayerBattleHandler(e) {
         cell.classList.remove('shooting');
         if(targetBoard[row][col] === 1) {
             cell.classList.add('hit');
+            cell.classList.add('ship'); 
+            if(isTwoPlayerShipSunk(row, col, targetBoard, currentPlayer === 1 ? '#board2' : '#board1')) {
+                markTwoPlayerSurrounding(row, col, targetBoard, currentPlayer === 1 ? '#board2' : '#board1');
+            }
             if(checkVictory(targetBoard, currentPlayer === 1 ? '#board2' : '#board1')) {
                 gameEnd(`victory_player${currentPlayer}`);
                 return;
@@ -645,6 +616,69 @@ function twoPlayerBattleHandler(e) {
             switchPlayer();
         }
     }, 500);
+}
+
+
+function isTwoPlayerShipSunk(row, col, board, boardSelector) {
+    let shipCells = [];
+    let visited = {};
+    
+    function dfs(r, c) {
+        const key = `${r},${c}`;
+        if(visited[key]) return;
+        visited[key] = true;
+        if(board[r][c] === 1) {
+            let cellEl = document.querySelector(`${boardSelector} .cell[data-row='${r}'][data-col='${c}']`);
+            if(cellEl) {
+                shipCells.push(cellEl);
+                const directions = [[1,0],[-1,0],[0,1],[0,-1]];
+                directions.forEach(d => {
+                    const nr = r + d[0], nc = c + d[1];
+                    if(nr >= 0 && nr < boardSize && nc >= 0 && nc < boardSize && board[nr][nc] === 1) {
+                        dfs(nr, nc);
+                    }
+                });
+            }
+        }
+    }
+    
+    dfs(row, col);
+    return shipCells.every(cell => cell.classList.contains('hit'));
+}
+
+function markTwoPlayerSurrounding(row, col, board, boardSelector) {
+    let shipPositions = [];
+    let visited = {};
+    
+    function dfs(r, c) {
+        const key = `${r},${c}`;
+        if(visited[key]) return;
+        visited[key] = true;
+        if(board[r][c] === 1) {
+            shipPositions.push({r, c});
+            const directions = [[1,0],[-1,0],[0,1],[0,-1]];
+            directions.forEach(d => {
+                const nr = r + d[0], nc = c + d[1];
+                if(nr >= 0 && nr < boardSize && nc >= 0 && nc < boardSize && board[nr][nc] === 1) {
+                    dfs(nr, nc);
+                }
+            });
+        }
+    }
+    
+    dfs(row, col);
+    shipPositions.forEach(pos => {
+        for(let dr = -1; dr <= 1; dr++) {
+            for(let dc = -1; dc <= 1; dc++) {
+                const nr = pos.r + dr, nc = pos.c + dc;
+                if(nr < 0 || nr >= boardSize || nc < 0 || nc >= boardSize) continue;
+                let neighbor = document.querySelector(`${boardSelector} .cell[data-row='${nr}'][data-col='${nc}']`);
+                if(neighbor && !neighbor.classList.contains('hit') && !neighbor.classList.contains('miss')) {
+                    neighbor.classList.add('miss');
+                }
+            }
+        }
+    });
 }
 
 function switchPlayer() {
@@ -660,6 +694,8 @@ function switchPlayer() {
         board1.style.pointerEvents = 'none';
         board2.style.pointerEvents = 'auto';
     }
+    
+    attachTwoPlayerBattleEvents();
     updateTurnMessage();
 }
 
@@ -669,7 +705,6 @@ function updateTurnMessage() {
     turnHint.textContent = `Ход Игрока ${currentPlayer}`;
 }
 
-// Модифицируем функцию gameEnd для поддержки двух игроков
 function gameEnd(result) {
     gameState = 'end';
     if(result === 'victory') {
@@ -688,11 +723,10 @@ function gameEnd(result) {
     document.body.appendChild(menuBtn);
 }
 
-// Добавляем недостающую функцию calculateShipCells
+
 function calculateShipCells(start, end) {
     let shipCells = [];
     if(start.row === end.row) {
-        // горизонтальное размещение
         const min = Math.min(start.col, end.col);
         const max = Math.max(start.col, end.col);
         if(max - min + 1 !== shipsToPlace[currentShipIndex]) {
@@ -703,7 +737,6 @@ function calculateShipCells(start, end) {
             shipCells.push({row: start.row, col: c});
         }
     } else if(start.col === end.col) {
-        // вертикальное размещение
         const min = Math.min(start.row, end.row);
         const max = Math.max(start.row, end.row);
         if(max - min + 1 !== shipsToPlace[currentShipIndex]) {
@@ -720,7 +753,6 @@ function calculateShipCells(start, end) {
     return shipCells;
 }
 
-// Добавляем функцию проверки размещения для режима двух игроков
 function isValidTwoPlayerPlacement(shipCells, board) {
     for (let pos of shipCells) {
         if(board[pos.row][pos.col] === 1) return false;
@@ -735,7 +767,6 @@ function isValidTwoPlayerPlacement(shipCells, board) {
     return true;
 }
 
-// Добавляем функцию размещения корабля на доске
 function placeShipOnBoard(shipCells, playerNum) {
     const board = playerNum === 1 ? 'board1' : 'board2';
     const boardData = boards[`player${playerNum}`];
