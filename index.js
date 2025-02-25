@@ -61,7 +61,11 @@ function initGame() {
         
         gameState = 'placement';
         currentPlayer = 1;
+        
+        // Меняем заголовок на "Игрок 1" только в режиме двух игроков
+        document.querySelector('#player1 h2').textContent = 'Игрок 1';
         document.getElementById('player2Title').textContent = 'Игрок 2';
+        
         document.getElementById('placementMsg').style.display = 'block';
         document.getElementById('placementMsg').textContent = `Игрок 1: Разместите корабль длиной ${shipsToPlace[0]}`;
         document.getElementById('shipHint').style.display = 'block';
@@ -470,15 +474,23 @@ function handlePlayerAction(cell) {
 
 
 function checkVictory(board, boardSelector) {
-    for(let i = 0; i < boardSize; i++){
-        for(let j = 0; j < boardSize; j++){
+    let shipCellsCount = 0;
+    let hitCellsCount = 0;
+    
+    // Считаем общее количество клеток с кораблями и количество попаданий
+    for(let i = 0; i < boardSize; i++) {
+        for(let j = 0; j < boardSize; j++) {
             if(board[i][j] === 1) {
+                shipCellsCount++;
                 let cell = document.querySelector(`${boardSelector} .cell[data-row='${i}'][data-col='${j}']`);
-                if(cell && !cell.classList.contains('hit')) return false;
+                if(cell && cell.classList.contains('hit')) {
+                    hitCellsCount++;
+                }
             }
         }
     }
-    return true;
+    
+    return shipCellsCount === hitCellsCount;
 }
 
 
@@ -633,7 +645,8 @@ function twoPlayerBattleHandler(e) {
                 markDestroyedShipArea(row, col, targetBoard, shotsArray);
             }
             
-            if(checkVictory(targetBoard, currentPlayer === 1 ? '#board2' : '#board1')) {
+            // Проверяем победу текущего игрока
+            if(checkVictory(targetBoard, '#board2')) {  // Всегда проверяем на правой доске
                 gameEnd(`victory_player${currentPlayer}`);
                 return;
             }
@@ -699,17 +712,16 @@ function markDestroyedShipArea(row, col, board, shotsArray) {
     
     findShip(row, col);
     
-    // Отмечаем все клетки вокруг корабля как промахи на правой доске
+    // Отмечаем все клетки вокруг корабля как промахи всегда на правой доске
     shipCells.forEach(({row, col}) => {
         for(let dr = -1; dr <= 1; dr++) {
             for(let dc = -1; dc <= 1; dc++) {
                 const newR = row + dr;
                 const newC = col + dc;
                 if(newR >= 0 && newR < boardSize && newC >= 0 && newC < boardSize) {
-                    // Если клетка не является частью корабля и ещё не отмечена
                     if(board[newR][newC] !== 1 && shotsArray[newR][newC] === 0) {
                         shotsArray[newR][newC] = 1; // отмечаем как промах
-                        // Обновляем отображение на правой доске
+                        // Всегда используем правую доску (board2)
                         const cell = document.querySelector(`#board2 .cell[data-row='${newR}'][data-col='${newC}']`);
                         if(cell) {
                             cell.classList.add('miss');
@@ -770,7 +782,7 @@ function markTwoPlayerSurrounding(row, col, board, boardSelector) {
     
     dfs(row, col);
     shipPositions.forEach(pos => {
-        for(let dr = -1; dr <= 1; dr++) {
+        for(let dr = -1; dr <= 1; dr++){
             for(let dc = -1; dc <= 1; dc++){
                 const nr = pos.r + dr, nc = pos.c + dc;
                 if(nr < 0 || nr >= boardSize || nc < 0 || nc >= boardSize) continue;
