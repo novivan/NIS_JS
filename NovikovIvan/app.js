@@ -1,12 +1,46 @@
-function appSeaBattle() {
-    return "Sea Battle";
-}
-
-(function() {
-    // Вызываем функцию при загрузке и устанавливаем заголовок
-    document.title = appSeaBattle();
+function appSeaBattle(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) {
+        console.error(`Container with id "${containerId}" not found`);
+        return "Sea Battle";
+    }
     
-    document.getElementById('startBtn').addEventListener('click', initGame);
+    // Создаем структуру приложения
+    container.innerHTML = `
+        <h1>Морской бой</h1>
+        <div id="controls">
+            <label for="mode">Режим игры:</label>
+            <select id="mode">
+                <option value="single">Один против бота</option>
+                <option value="two">Два игрока (офлайн)</option>
+            </select>
+            <label for="boardSize">Размер поля:</label>
+            <select id="boardSize">
+                <option value="10">10x10</option>
+                <option value="15">15x15</option>
+                <option value="20">20x20</option>
+            </select>
+            <button id="startBtn">Старт</button>
+            <button id="confirmShipsBtn" style="display:none;">Подтвердить корабли</button>
+        </div>
+        <div id="game">
+            <div id="player1" class="board-container">
+                <h2>Игрок</h2>
+                <div id="board1" class="board"></div>
+            </div>
+            <div id="player2" class="board-container">
+                <h2 id="player2Title">Бот</h2>
+                <div id="board2" class="board"></div>
+            </div>
+            <div id="transition-screen" style="display: none;" class="transition-screen">
+                <h2 id="transition-message">Передайте устройство следующему игроку</h2>
+                <button id="ready-btn">Я готов</button>
+            </div>
+            <p id="placementMsg" style="display:none;">Нажмите на клетки для расстановки кораблей</p>
+            <p id="shipHint" style="display:none;">Чтобы поставить корабль, кликните сначала в клетку для носа корабля, затем в клетку для кормы.</p>
+            <p id="turnHint" style="display:none;">Ваш ход. Для выстрела нажмите на клетку противника.</p>
+        </div>
+    `;
 
     let boardSize, mode;
     let currentPlayer = 1;
@@ -1004,4 +1038,9 @@ function appSeaBattle() {
             cell.addEventListener('click', twoPlayerBattleHandler);
         });
     }
-})();
+
+    // Инициализация после создания DOM элементов
+    document.getElementById('startBtn').addEventListener('click', initGame);
+
+    return "Sea Battle";
+}
