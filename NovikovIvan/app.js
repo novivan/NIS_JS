@@ -1,9 +1,13 @@
 function appSeaBattle(containerId, cssPath = 'app.css') {
+    const instanceId = 'seaBattle_' + Math.random().toString(36).substr(2, 9);
+    
     if (cssPath) {
-        const linkElement = document.createElement('link');
-        linkElement.rel = 'stylesheet';
-        linkElement.href = cssPath;
-        document.head.appendChild(linkElement);
+        if (!document.querySelector(`link[href="${cssPath}"]`)) {
+            const linkElement = document.createElement('link');
+            linkElement.rel = 'stylesheet';
+            linkElement.href = cssPath;
+            document.head.appendChild(linkElement);
+        }
     }
 
     const container = document.getElementById(containerId);
@@ -12,46 +16,53 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
         return "Sea Battle";
     }
     
+    // Создаем элемент-обертку с уникальным ID
     const wrapper = document.createElement('div');
     wrapper.className = 'sea-battle-wrapper';
+    wrapper.id = instanceId;
     container.appendChild(wrapper);
     
-    // Создаем структуру приложения внутри обертки
+    // Модифицируем HTML, добавляя instanceId к каждому ID
     wrapper.innerHTML = `
         <h1>Морской бой</h1>
-        <div id="controls">
-            <label for="mode">Режим игры:</label>
-            <select id="mode">
+        <div id="${instanceId}_controls">
+            <label for="${instanceId}_mode">Режим игры:</label>
+            <select id="${instanceId}_mode">
                 <option value="single">Один против бота</option>
                 <option value="two">Два игрока (офлайн)</option>
             </select>
-            <label for="boardSize">Размер поля:</label>
-            <select id="boardSize">
+            <label for="${instanceId}_boardSize">Размер поля:</label>
+            <select id="${instanceId}_boardSize">
                 <option value="10">10x10</option>
                 <option value="15">15x15</option>
                 <option value="20">20x20</option>
             </select>
-            <button id="startBtn">Старт</button>
-            <button id="confirmShipsBtn" style="display:none;">Подтвердить корабли</button>
+            <button id="${instanceId}_startBtn">Старт</button>
+            <button id="${instanceId}_confirmShipsBtn" style="display:none;">Подтвердить корабли</button>
         </div>
-        <div id="game">
-            <div id="player1" class="board-container">
+        <div id="${instanceId}_game">
+            <div id="${instanceId}_player1" class="board-container">
                 <h2>Игрок</h2>
-                <div id="board1" class="board"></div>
+                <div id="${instanceId}_board1" class="board"></div>
             </div>
-            <div id="player2" class="board-container">
-                <h2 id="player2Title">Бот</h2>
-                <div id="board2" class="board"></div>
+            <div id="${instanceId}_player2" class="board-container">
+                <h2 id="${instanceId}_player2Title">Бот</h2>
+                <div id="${instanceId}_board2" class="board"></div>
             </div>
-            <div id="transition-screen" style="display: none;" class="transition-screen">
-                <h2 id="transition-message">Передайте устройство следующему игроку</h2>
-                <button id="ready-btn">Я готов</button>
+            <div id="${instanceId}_transition-screen" style="display: none;" class="transition-screen">
+                <h2 id="${instanceId}_transition-message">Передайте устройство следующему игроку</h2>
+                <button id="${instanceId}_ready-btn">Я готов</button>
             </div>
-            <p id="placementMsg" style="display:none;">Нажмите на клетки для расстановки кораблей</p>
-            <p id="shipHint" style="display:none;">Чтобы поставить корабль, кликните сначала в клетку для носа корабля, затем в клетку для кормы.</p>
-            <p id="turnHint" style="display:none;">Ваш ход. Для выстрела нажмите на клетку противника.</p>
+            <p id="${instanceId}_placementMsg" style="display:none;">Нажмите на клетки для расстановки кораблей</p>
+            <p id="${instanceId}_shipHint" style="display:none;">Чтобы поставить корабль, кликните сначала в клетку для носа корабля, затем в клетку для кормы.</p>
+            <p id="${instanceId}_turnHint" style="display:none;">Ваш ход. Для выстрела нажмите на клетку противника.</p>
         </div>
     `;
+
+    // Модифицируем все обращения к DOM элементам, добавляя instanceId
+    function getElementById(id) {
+        return document.getElementById(`${instanceId}_${id}`);
+    }
 
     let boardSize, mode;
     let currentPlayer = 1;
@@ -70,8 +81,8 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
     let placementStart = null;
 
     function initGame() {
-        mode = document.getElementById('mode').value;
-        boardSize = parseInt(document.getElementById('boardSize').value);
+        mode = getElementById('mode').value;
+        boardSize = parseInt(getElementById('boardSize').value);
         
         if (boardSize === 10) {
             shipsToPlace = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]; 
@@ -81,8 +92,8 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
             shipsToPlace = [10, 9, 8, 8, 7, 7, 6, 6, 5, 5, 4, 4, 3];
         }
         
-        document.getElementById('board1').innerHTML = '';
-        document.getElementById('board2').innerHTML = '';
+        getElementById('board1').innerHTML = '';
+        getElementById('board2').innerHTML = '';
         
         generateBoardDOM('board1', boardSize);
         generateBoardDOM('board2', boardSize);
@@ -95,10 +106,10 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
             placeBotShips(boards.bot);
             gameState = 'placement';
             currentShipIndex = 0;
-            document.getElementById('confirmShipsBtn').style.display = 'none';
-            document.getElementById('placementMsg').style.display = 'block';
-            document.getElementById('placementMsg').textContent = `Разместите корабль длиной ${shipsToPlace[currentShipIndex]}`;
-            document.getElementById('shipHint').style.display = 'block';
+            getElementById('confirmShipsBtn').style.display = 'none';
+            getElementById('placementMsg').style.display = 'block';
+            getElementById('placementMsg').textContent = `Разместите корабль длиной ${shipsToPlace[currentShipIndex]}`;
+            getElementById('shipHint').style.display = 'block';
             attachPlacementEvents();
         } else {
             boards = {
@@ -108,19 +119,19 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
             player1Shots = createEmptyBoard(boardSize);
             player2Shots = createEmptyBoard(boardSize);
             
-            document.getElementById('board1').style.display = 'grid';
-            document.getElementById('board2').style.display = 'grid';
-            document.getElementById('board2').style.visibility = 'hidden';
+            getElementById('board1').style.display = 'grid';
+            getElementById('board2').style.display = 'grid';
+            getElementById('board2').style.visibility = 'hidden';
             
             gameState = 'placement';
             currentPlayer = 1;
             
-            document.querySelector('#player1 h2').textContent = 'Игрок 1';
-            document.getElementById('player2Title').textContent = 'Игрок 2';
+            getElementById('player1').querySelector('h2').textContent = 'Игрок 1';
+            getElementById('player2Title').textContent = 'Игрок 2';
             
-            document.getElementById('placementMsg').style.display = 'block';
-            document.getElementById('placementMsg').textContent = `Игрок 1: Разместите корабль длиной ${shipsToPlace[0]}`;
-            document.getElementById('shipHint').style.display = 'block';
+            getElementById('placementMsg').style.display = 'block';
+            getElementById('placementMsg').textContent = `Игрок 1: Разместите корабль длиной ${shipsToPlace[0]}`;
+            getElementById('shipHint').style.display = 'block';
             attachTwoPlayerPlacementEvents();
         }
         
@@ -136,7 +147,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
     }
 
     function generateBoardDOM(elementId, size) {
-        const boardContainer = document.getElementById(elementId);
+        const boardContainer = getElementById(elementId);
         boardContainer.style.cssText = '';
         boardContainer.style.gridTemplateColumns = `repeat(${size}, 30px)`;
         
@@ -190,14 +201,14 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
     }
 
     function attachPlacementEvents() {
-        const boardCells = document.getElementById('board1').querySelectorAll('.cell');
+        const boardCells = getElementById('board1').querySelectorAll('.cell');
         boardCells.forEach(cell => {
             cell.addEventListener('click', placementHandler);
         });
     }
 
     function detachPlacementEvents() {
-        const boardCells = document.getElementById('board1').querySelectorAll('.cell');
+        const boardCells = getElementById('board1').querySelectorAll('.cell');
         boardCells.forEach(cell => {
             cell.removeEventListener('click', placementHandler);
         });
@@ -215,9 +226,9 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
         if(!placementStart) {
             placementStart = {row, col, el: cell};
             cell.classList.add('selected');
-            document.getElementById('placementMsg').textContent = 
+            getElementById('placementMsg').textContent = 
                 `Выберите другой конец корабля длиной ${shipsToPlace[currentShipIndex]}`;
-            document.getElementById('placementMsg').classList.add('smaller');
+            getElementById('placementMsg').classList.add('smaller');
         } else {
             const start = placementStart;
             let shipCells = [];
@@ -249,22 +260,22 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
                 return;
             }
             shipCells.forEach(pos => {
-                const cellEl = document.querySelector(`#board1 .cell[data-row='${pos.row}'][data-col='${pos.col}']`);
+                const cellEl = getElementById('board1').querySelector(`.cell[data-row='${pos.row}'][data-col='${pos.col}']`);
                 cellEl.classList.add('ship');
                 boards.player[pos.row][pos.col] = 1;
             });
             currentShipIndex++;
             clearSelection();
-            const msg = document.getElementById('placementMsg');
+            const msg = getElementById('placementMsg');
             if(currentShipIndex < shipsToPlace.length) {
                 msg.textContent = `Разместите корабль длиной ${shipsToPlace[currentShipIndex]}`;
                 msg.classList.remove('smaller');
             } else {
                 gameState = 'battle';
-                document.getElementById('placementMsg').style.display = 'none';
-                document.getElementById('shipHint').style.display = 'none';
+                getElementById('placementMsg').style.display = 'none';
+                getElementById('shipHint').style.display = 'none';
                 detachPlacementEvents();
-                document.getElementById('board2').style.pointerEvents = 'auto';
+                getElementById('board2').style.pointerEvents = 'auto';
                 attachShootingEvents();
             }
         }
@@ -272,7 +283,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
 
     function clearSelection() {
         const board = mode === 'single' ? 'board1' : `board${currentPlayer}`;
-        const selected = document.getElementById(board).querySelectorAll('.cell.selected');
+        const selected = getElementById(board).querySelectorAll('.cell.selected');
         selected.forEach(cell => cell.classList.remove('selected'));
         placementStart = null;
     }
@@ -292,19 +303,19 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
     }
 
     function attachShootingEvents() {
-        const boardCells = document.getElementById('board2').querySelectorAll('.cell');
+        const boardCells = getElementById('board2').querySelectorAll('.cell');
         boardCells.forEach(cell => {
             cell.addEventListener('click', shootingHandler);
         });
-        document.getElementById('turnHint').style.display = 'block';
+        getElementById('turnHint').style.display = 'block';
     }
 
     function detachShootingEvents() {
-        const boardCells = document.getElementById('board2').querySelectorAll('.cell');
+        const boardCells = getElementById('board2').querySelectorAll('.cell');
         boardCells.forEach(cell => {
             cell.removeEventListener('click', shootingHandler);
         });
-        document.getElementById('turnHint').style.display = 'none';
+        getElementById('turnHint').style.display = 'none';
     }
 
     function shootingHandler(e) {
@@ -327,7 +338,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
                 if(isShipSunk(row, col)) {
                     markSurrounding(row, col);
                 }
-                if(checkVictory(boards.bot, '#board2')) {
+                if(checkVictory(boards.bot, `#${instanceId}_board2`)) {
                     gameEnd('victory');
                     return;
                 }
@@ -350,7 +361,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
             if(visited[key]) return;
             visited[key] = true;
             if(boards.bot[r][c] === 1) {
-                let cellEl = document.querySelector(`#board2 .cell[data-row='${r}'][data-col='${c}']`);
+                let cellEl = getElementById('board2').querySelector(`.cell[data-row='${r}'][data-col='${c}']`);
                 if(cellEl) {
                     shipCells.push(cellEl);
                     const directions = [[1,0],[-1,0],[0,1],[0,-1]];
@@ -391,7 +402,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
                 for(let dc = -1; dc <= 1; dc++){
                     const nr = pos.r + dr, nc = pos.c + dc;
                     if(nr < 0 || nr >= boardSize || nc < 0 || nc >= boardSize) continue;
-                    let neighbor = document.querySelector(`#board2 .cell[data-row='${nr}'][data-col='${nc}']`);
+                    let neighbor = getElementById('board2').querySelector(`.cell[data-row='${nr}'][data-col='${nc}']`);
                     if(neighbor && !neighbor.classList.contains('hit') && !neighbor.classList.contains('miss')){
                         neighbor.classList.add('miss');
                     }
@@ -403,12 +414,12 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
     function botMove() {
         isBotMoving = true; 
         detachShootingEvents(); 
-        document.getElementById('board2').style.pointerEvents = 'none';
+        getElementById('board2').style.pointerEvents = 'none';
         let row, col, cell;
         do {
             row = Math.floor(Math.random() * boardSize);
             col = Math.floor(Math.random() * boardSize);
-            cell = document.querySelector(`#board1 .cell[data-row='${row}'][data-col='${col}']`);
+            cell = getElementById('board1').querySelector(`.cell[data-row='${row}'][data-col='${col}']`);
         } while(cell.classList.contains('hit') || cell.classList.contains('miss')); 
         
 
@@ -423,7 +434,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
                     if(isShipSunkPlayer(row, col)) {
                         markSurroundingPlayer(row, col);
                     }
-                    if(checkVictory(boards.player, '#board1')) {
+                    if(checkVictory(boards.player, `#${instanceId}_board1`)) {
                         gameEnd('defeat');
                         return;
                     }
@@ -431,7 +442,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
                 } else {
                     cell.classList.add('miss');
                     isBotMoving = false; 
-                    document.getElementById('board2').style.pointerEvents = 'auto'; 
+                    getElementById('board2').style.pointerEvents = 'auto'; 
                     attachShootingEvents(); 
                     playerCanShoot = true; 
                     resolve();
@@ -449,7 +460,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
             if(visited[key]) return;
             visited[key] = true;
             if(boards.player[r][c] === 1) {
-                let cellEl = document.querySelector(`#board1 .cell[data-row='${r}'][data-col='${c}']`);
+                let cellEl = getElementById('board1').querySelector(`.cell[data-row='${r}'][data-col='${c}']`);
                 if(cellEl) {
                     shipCells.push(cellEl);
                     const directions = [[1,0],[-1,0],[0,1],[0,-1]];
@@ -490,7 +501,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
                 for(let dc = -1; dc <= 1; dc++){
                     const nr = pos.r + dr, nc = pos.c + dc;
                     if(nr < 0 || nr >= boardSize || nc < 0 || nc >= boardSize) continue;
-                    let neighbor = document.querySelector(`#board1 .cell[data-row='${nr}'][data-col='${nc}']`);
+                    let neighbor = getElementById('board1').querySelector(`.cell[data-row='${nr}'][data-col='${nc}']`);
                     if(neighbor && !neighbor.classList.contains('hit') && !neighbor.classList.contains('miss')){
                         neighbor.classList.add('miss');
                     }
@@ -500,11 +511,11 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
     }
 
     function attachCellEvents() {
-        const board1Cells = document.getElementById('board1').querySelectorAll('.cell');
+        const board1Cells = getElementById('board1').querySelectorAll('.cell');
         board1Cells.forEach(cell => {
             cell.addEventListener('click', () => handlePlayerAction(1, cell));
         });
-        const board2Cells = document.getElementById('board2').querySelectorAll('.cell');
+        const board2Cells = getElementById('board2').querySelectorAll('.cell');
         board2Cells.forEach(cell => {
             cell.addEventListener('click', () => handlePlayerAction(2, cell));
         });
@@ -562,7 +573,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
 
     function attachTwoPlayerPlacementEvents() {
         const board = currentPlayer === 1 ? 'board1' : 'board2';
-        const boardCells = document.getElementById(board).querySelectorAll('.cell');
+        const boardCells = getElementById(board).querySelectorAll('.cell');
         boardCells.forEach(cell => {
             cell.addEventListener('click', twoPlayerPlacementHandler);
         });
@@ -580,7 +591,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
         if(!placementStart) {
             placementStart = {row, col, el: cell};
             cell.classList.add('selected');
-            document.getElementById('placementMsg').textContent = 
+            getElementById('placementMsg').textContent = 
                 `Игрок ${currentPlayer}: Выберите другой конец корабля длиной ${shipsToPlace[currentShipIndex]}`;
         } else {
             const shipCells = calculateShipCells(placementStart, {row, col});
@@ -600,7 +611,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
                     startTwoPlayerBattle();
                 }
             } else {
-                document.getElementById('placementMsg').textContent = 
+                getElementById('placementMsg').textContent = 
                     `Игрок ${currentPlayer}: Разместите корабль длиной ${shipsToPlace[currentShipIndex]}`;
             }
         }
@@ -612,9 +623,9 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
         showTransitionScreen(
             "Передайте устройство Игроку 2 для расстановки кораблей",
             () => {
-                document.getElementById('board1').style.visibility = 'hidden';
-                document.getElementById('board2').style.visibility = 'visible';
-                document.getElementById('placementMsg').textContent = `Игрок 2: Разместите корабль длиной ${shipsToPlace[0]}`;
+                getElementById('board1').style.visibility = 'hidden';
+                getElementById('board2').style.visibility = 'visible';
+                getElementById('placementMsg').textContent = `Игрок 2: Разместите корабль длиной ${shipsToPlace[0]}`;
                 clearSelection();
                 attachTwoPlayerPlacementEvents();
             }
@@ -627,11 +638,11 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
         showTransitionScreen(
             "Начинаем битву! Передайте устройство Игроку 1",
             () => {
-                document.getElementById('placementMsg').style.display = 'none';
-                document.getElementById('shipHint').style.display = 'none';
+                getElementById('placementMsg').style.display = 'none';
+                getElementById('shipHint').style.display = 'none';
                 updateBoardsDisplay();
-                document.getElementById('board1').style.visibility = 'visible';
-                document.getElementById('board2').style.visibility = 'visible';
+                getElementById('board1').style.visibility = 'visible';
+                getElementById('board2').style.visibility = 'visible';
                 attachTwoPlayerBattleEvents();
                 updateTurnMessage();
             }
@@ -640,15 +651,15 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
 
     function hideShips() {
         const targetBoard = currentPlayer === 1 ? 'board2' : 'board1';
-        const ships = document.getElementById(targetBoard).querySelectorAll('.ship:not(.hit)');
+        const ships = getElementById(targetBoard).querySelectorAll('.ship:not(.hit)');
         ships.forEach(cell => {
             cell.style.backgroundColor = '#add8e6';
         });
     }
 
     function attachTwoPlayerBattleEvents() {
-        const board1Cells = document.getElementById('board1').querySelectorAll('.cell');
-        const board2Cells = document.getElementById('board2').querySelectorAll('.cell');
+        const board1Cells = getElementById('board1').querySelectorAll('.cell');
+        const board2Cells = getElementById('board2').querySelectorAll('.cell');
         
         board1Cells.forEach(cell => {
             cell.removeEventListener('click', twoPlayerBattleHandler);
@@ -692,7 +703,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
                     markDestroyedShipArea(row, col, targetBoard, shotsArray);
                 }
                 
-                if(checkVictory(targetBoard, '#board2')) {  
+                if(checkVictory(targetBoard, `#${instanceId}_board2`)) {  
                     gameEnd(`victory_player${currentPlayer}`);
                     return;
                 }
@@ -762,7 +773,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
                     if(newR >= 0 && newR < boardSize && newC >= 0 && newC < boardSize) {
                         if(board[newR][newC] !== 1 && shotsArray[newR][newC] === 0) {
                             shotsArray[newR][newC] = 1;
-                            const cell = document.querySelector(`#board2 .cell[data-row='${newR}'][data-col='${newC}']`);
+                            const cell = getElementById('board2').querySelector(`.cell[data-row='${newR}'][data-col='${newC}']`);
                             if(cell) {
                                 cell.classList.add('miss');
                             }
@@ -842,8 +853,8 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
                 "Передайте устройство Игроку 2",
                 () => {
                     updateBoardsDisplay();
-                    document.getElementById('board1').style.visibility = 'visible';
-                    document.getElementById('board2').style.visibility = 'visible';
+                    getElementById('board1').style.visibility = 'visible';
+                    getElementById('board2').style.visibility = 'visible';
                     attachTwoPlayerBattleEvents();
                     updateTurnMessage();
                 }
@@ -854,8 +865,8 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
                 "Передайте устройство Игроку 1",
                 () => {
                     updateBoardsDisplay();
-                    document.getElementById('board1').style.visibility = 'visible';
-                    document.getElementById('board2').style.visibility = 'visible';
+                    getElementById('board1').style.visibility = 'visible';
+                    getElementById('board2').style.visibility = 'visible';
                     attachTwoPlayerBattleEvents();
                     updateTurnMessage();
                 }
@@ -864,7 +875,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
     }
 
     function updateTurnMessage() {
-        const turnHint = document.getElementById('turnHint');
+        const turnHint = getElementById('turnHint');
         turnHint.style.display = 'block';
         turnHint.textContent = `Ход Игрока ${currentPlayer}`;
     }
@@ -936,7 +947,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
         const boardData = boards[`player${playerNum}`];
         
         shipCells.forEach(pos => {
-            const cellEl = document.querySelector(`#${board} .cell[data-row='${pos.row}'][data-col='${pos.col}']`);
+            const cellEl = getElementById(board).querySelector(`.cell[data-row='${pos.row}'][data-col='${pos.col}']`);
             cellEl.classList.add('ship');
             boardData[pos.row][pos.col] = 1;
         });
@@ -944,13 +955,13 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
 
 
     function showTransitionScreen(message, callback) {
-        const transitionScreen = document.getElementById('transition-screen');
-        const transitionMessage = document.getElementById('transition-message');
-        const readyBtn = document.getElementById('ready-btn');
+        const transitionScreen = getElementById('transition-screen');
+        const transitionMessage = getElementById('transition-message');
+        const readyBtn = getElementById('ready-btn');
         
 
-        document.getElementById('board1').style.visibility = 'hidden';
-        document.getElementById('board2').style.visibility = 'hidden';
+        getElementById('board1').style.visibility = 'hidden';
+        getElementById('board2').style.visibility = 'hidden';
         
         transitionMessage.textContent = message;
         transitionScreen.style.display = 'flex';
@@ -966,10 +977,10 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
     }
 
     function updateBoardsDisplay() {
-        const board1 = document.getElementById('board1');
-        const board2 = document.getElementById('board2');
-        const player1Title = document.querySelector('#player1 h2');
-        const player2Title = document.querySelector('#player2 h2');
+        const board1 = getElementById('board1');
+        const board2 = getElementById('board2');
+        const player1Title = getElementById('player1').querySelector('h2');
+        const player2Title = getElementById('player2').querySelector('h2');
 
         if (currentPlayer === 1) {
             player1Title.textContent = 'Ваше поле (Игрок 1)';
@@ -1035,8 +1046,8 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
     }
 
     function attachTwoPlayerBattleEvents() {
-        const board1Cells = document.getElementById('board1').querySelectorAll('.cell');
-        const board2Cells = document.getElementById('board2').querySelectorAll('.cell');
+        const board1Cells = getElementById('board1').querySelectorAll('.cell');
+        const board2Cells = getElementById('board2').querySelectorAll('.cell');
         
         board1Cells.forEach(cell => {
             cell.removeEventListener('click', twoPlayerBattleHandler);
@@ -1051,7 +1062,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
     }
 
     // Инициализация после создания DOM элементов
-    document.getElementById('startBtn').addEventListener('click', initGame);
+    getElementById('startBtn').addEventListener('click', initGame);
 
     return "Sea Battle";
 }
