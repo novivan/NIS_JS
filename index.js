@@ -31,7 +31,7 @@ function initGame() {
     document.getElementById('board1').innerHTML = '';
     document.getElementById('board2').innerHTML = '';
     
-    // Генерация DOM (перенесено сюда)
+    // Генерация DOM - ЕДИНОЖДЫ для обоих полей
     generateBoardDOM('board1', boardSize);
     generateBoardDOM('board2', boardSize);
     
@@ -62,7 +62,7 @@ function initGame() {
         document.getElementById('placementMsg').style.display = 'block';
         document.getElementById('placementMsg').textContent = `Игрок 1: Разместите корабль длиной ${shipsToPlace[0]}`;
         document.getElementById('shipHint').style.display = 'block';
-        document.getElementById('board2').style.pointerEvents = 'none';
+        document.getElementById('board2').style.display = 'none'; // Скрываем поле второго игрока
         attachTwoPlayerPlacementEvents();
     }
     
@@ -79,7 +79,12 @@ function createEmptyBoard(size) {
 
 function generateBoardDOM(elementId, size) {
     const boardContainer = document.getElementById(elementId);
+    // Убедимся, что предыдущие стили очищены
+    boardContainer.style.cssText = '';
     boardContainer.style.gridTemplateColumns = `repeat(${size}, 30px)`;
+    
+    boardContainer.innerHTML = ''; // Очищаем содержимое перед генерацией
+    
     for (let i = 0; i < size; i++) {
         for (let j = 0; j < size; j++) {
             const cell = document.createElement('div');
@@ -215,9 +220,10 @@ function placementHandler(e) {
     }
 }
 
+// Изменяем функцию clearSelection для поддержки двух игроков
 function clearSelection() {
-    // Убираем выделение со всех клеток
-    const selected = document.getElementById('board1').querySelectorAll('.cell.selected');
+    const board = mode === 'single' ? 'board1' : `board${currentPlayer}`;
+    const selected = document.getElementById(board).querySelectorAll('.cell.selected');
     selected.forEach(cell => cell.classList.remove('selected'));
     placementStart = null;
 }
@@ -536,6 +542,8 @@ function twoPlayerPlacementHandler(e) {
     const col = Number(cell.dataset.col);
     const currentBoard = boards[`player${currentPlayer}`];
     
+    if(cell.classList.contains('ship')) return; // Пропускаем, если клетка уже занята
+    
     if(!placementStart) {
         placementStart = {row, col, el: cell};
         cell.classList.add('selected');
@@ -555,16 +563,8 @@ function twoPlayerPlacementHandler(e) {
         
         if(currentShipIndex >= shipsToPlace.length) {
             if(currentPlayer === 1) {
-                // Переход к расстановке второго игрока
-                currentPlayer = 2;
-                currentShipIndex = 0;
-                document.getElementById('board1').style.pointerEvents = 'none';
-                document.getElementById('board2').style.pointerEvents = 'auto';
-                document.getElementById('placementMsg').textContent = 
-                    `Игрок 2: Разместите корабль длиной ${shipsToPlace[0]}`;
-                attachTwoPlayerPlacementEvents();
+                switchToSecondPlayer();
             } else {
-                // Начало битвы
                 startTwoPlayerBattle();
             }
         } else {
@@ -574,15 +574,36 @@ function twoPlayerPlacementHandler(e) {
     }
 }
 
+function switchToSecondPlayer() {
+    currentPlayer = 2;
+    currentShipIndex = 0;
+    document.getElementById('board1').style.display = 'none'; // Скрываем поле первого игрока
+    document.getElementById('board2').style.display = 'block'; // Показываем поле второго игрока
+    document.getElementById('placementMsg').textContent = `Игрок 2: Разместите корабль длиной ${shipsToPlace[0]}`;
+    clearSelection(); // Очищаем выделение перед сменой игрока
+    attachTwoPlayerPlacementEvents();
+}
+
 function startTwoPlayerBattle() {
     gameState = 'battle';
     currentPlayer = 1;
     document.getElementById('placementMsg').style.display = 'none';
     document.getElementById('shipHint').style.display = 'none';
-    document.getElementById('board1').style.pointerEvents = 'none';
-    document.getElementById('board2').style.pointerEvents = 'auto';
+    document.getElementById('board1').style.display = 'block'; // Показываем оба поля
+    document.getElementById('board2').style.display = 'block';
+    // Скрываем корабли обоих игроков
+    hideShips();
     attachTwoPlayerBattleEvents();
     updateTurnMessage();
+}
+
+// Добавляем новую функцию для скрытия кораблей
+function hideShips() {
+    const ships1 = document.getElementById('board1').querySelectorAll('.ship');
+    const ships2 = document.getElementById('board2').querySelectorAll('.ship');
+    [...ships1, ...ships2].forEach(cell => {
+        cell.style.backgroundColor = '#add8e6'; // Возвращаем стандартный цвет клетки
+    });
 }
 
 function attachTwoPlayerBattleEvents() {
