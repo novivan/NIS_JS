@@ -5,8 +5,13 @@ function appSeaBattle(containerId) {
         return "Sea Battle";
     }
     
-    // Создаем структуру приложения
-    container.innerHTML = `
+    // Создаем элемент-обертку
+    const wrapper = document.createElement('div');
+    wrapper.className = 'sea-battle-wrapper';
+    container.appendChild(wrapper);
+    
+    // Создаем структуру приложения внутри обертки
+    wrapper.innerHTML = `
         <h1>Морской бой</h1>
         <div id="controls">
             <label for="mode">Режим игры:</label>
