@@ -56,13 +56,18 @@ function initGame() {
             player2: createEmptyBoard(boardSize)
         };
         
+        // Восстанавливаем стили отображения для обоих полей
+        document.getElementById('board1').style.display = 'grid';
+        document.getElementById('board2').style.display = 'grid';
+        // Скрываем только поле второго игрока
+        document.getElementById('board2').style.visibility = 'hidden';
+        
         gameState = 'placement';
         currentPlayer = 1;
         document.getElementById('player2Title').textContent = 'Игрок 2';
         document.getElementById('placementMsg').style.display = 'block';
         document.getElementById('placementMsg').textContent = `Игрок 1: Разместите корабль длиной ${shipsToPlace[0]}`;
         document.getElementById('shipHint').style.display = 'block';
-        document.getElementById('board2').style.display = 'none'; // Скрываем поле второго игрока
         attachTwoPlayerPlacementEvents();
     }
     
@@ -577,10 +582,11 @@ function twoPlayerPlacementHandler(e) {
 function switchToSecondPlayer() {
     currentPlayer = 2;
     currentShipIndex = 0;
-    document.getElementById('board1').style.display = 'none'; // Скрываем поле первого игрока
-    document.getElementById('board2').style.display = 'block'; // Показываем поле второго игрока
+    // Используем visibility вместо display
+    document.getElementById('board1').style.visibility = 'hidden';
+    document.getElementById('board2').style.visibility = 'visible';
     document.getElementById('placementMsg').textContent = `Игрок 2: Разместите корабль длиной ${shipsToPlace[0]}`;
-    clearSelection(); // Очищаем выделение перед сменой игрока
+    clearSelection();
     attachTwoPlayerPlacementEvents();
 }
 
@@ -589,9 +595,11 @@ function startTwoPlayerBattle() {
     currentPlayer = 1;
     document.getElementById('placementMsg').style.display = 'none';
     document.getElementById('shipHint').style.display = 'none';
-    document.getElementById('board1').style.display = 'block'; // Показываем оба поля
-    document.getElementById('board2').style.display = 'block';
-    // Скрываем корабли обоих игроков
+    
+    // Показываем оба поля
+    document.getElementById('board1').style.visibility = 'visible';
+    document.getElementById('board2').style.visibility = 'visible';
+    
     hideShips();
     attachTwoPlayerBattleEvents();
     updateTurnMessage();
