@@ -64,11 +64,12 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
         return document.getElementById(`${instanceId}_${id}`);
     }
 
-    let boardSize, mode;
+    let boardSize;
+    let mode;
     let currentPlayer = 1;
     let isBotMoving = false; 
     let playerCanShoot = true; 
-    let boards = {}; 
+    const boards = {}; 
     let shipPlacementPhase = false;
     const shipsCount = () => Math.floor(boardSize / 2);
 
@@ -76,7 +77,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
     let player2Shots = []; 
 
     let gameState = 'setup'; 
-    let shipsToPlace = [];
+    const shipsToPlace = [];
     let currentShipIndex = 0;
     let placementStart = null;
 
@@ -85,11 +86,17 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
         boardSize = parseInt(getElementById('boardSize').value);
         
         if (boardSize === 10) {
-            shipsToPlace = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]; 
+            const shipSizes = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1];
+            shipsToPlace.length = 0;
+            shipsToPlace.push(...shipSizes);
         } else if (boardSize === 15) {
-            shipsToPlace = [8, 7, 6, 6, 5, 4, 3, 2, 2, 1];
+            const shipSizes = [8, 7, 6, 6, 5, 4, 3, 2, 2, 1];
+            shipsToPlace.length = 0;
+            shipsToPlace.push(...shipSizes);
         } else if (boardSize === 20) {
-            shipsToPlace = [10, 9, 8, 8, 7, 7, 6, 6, 5, 5, 4, 4, 3];
+            const shipSizes = [10, 9, 8, 8, 7, 7, 6, 6, 5, 5, 4, 4, 3];
+            shipsToPlace.length = 0;
+            shipsToPlace.push(...shipSizes);
         }
         
         getElementById('board1').innerHTML = '';
@@ -99,10 +106,8 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
         generateBoardDOM('board2', boardSize);
         
         if(mode === 'single') {
-            boards = {
-                player: createEmptyBoard(boardSize),
-                bot: createEmptyBoard(boardSize)
-            };
+            boards.player = createEmptyBoard(boardSize);
+            boards.bot = createEmptyBoard(boardSize);
             placeBotShips(boards.bot);
             gameState = 'placement';
             currentShipIndex = 0;
@@ -112,10 +117,8 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
             getElementById('shipHint').style.display = 'block';
             attachPlacementEvents();
         } else {
-            boards = {
-                player1: createEmptyBoard(boardSize),
-                player2: createEmptyBoard(boardSize)
-            };
+            boards.player1 = createEmptyBoard(boardSize);
+            boards.player2 = createEmptyBoard(boardSize);
             player1Shots = createEmptyBoard(boardSize);
             player2Shots = createEmptyBoard(boardSize);
             
@@ -171,7 +174,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
                 const horizontal = Math.random() < 0.5;
                 const row = horizontal ? Math.floor(Math.random() * boardSize) : Math.floor(Math.random() * (boardSize - shipLength + 1));
                 const col = horizontal ? Math.floor(Math.random() * (boardSize - shipLength + 1)) : Math.floor(Math.random() * boardSize);
-                let shipCells = [];
+                const shipCells = [];
                 for(let i = 0; i < shipLength; i++){
                     shipCells.push({
                         row: horizontal ? row : row + i,
@@ -354,14 +357,14 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
     }
 
     function isShipSunk(row, col) {
-        let shipCells = [];
-        let visited = {};
+        const shipCells = [];
+        const visited = {};
         function dfs(r, c) {
             const key = `${r},${c}`;
             if(visited[key]) return;
             visited[key] = true;
             if(boards.bot[r][c] === 1) {
-                let cellEl = getElementById('board2').querySelector(`.cell[data-row='${r}'][data-col='${c}']`);
+                const cellEl = getElementById('board2').querySelector(`.cell[data-row='${r}'][data-col='${c}']`);
                 if(cellEl) {
                     shipCells.push(cellEl);
                     const directions = [[1,0],[-1,0],[0,1],[0,-1]];
@@ -379,8 +382,8 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
     }
 
     function markSurrounding(row, col) {
-        let shipPositions = [];
-        let visited = {};
+        const shipPositions = [];
+        const visited = {};
         function dfs(r, c) {
             const key = `${r},${c}`;
             if(visited[key]) return;
@@ -402,7 +405,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
                 for(let dc = -1; dc <= 1; dc++){
                     const nr = pos.r + dr, nc = pos.c + dc;
                     if(nr < 0 || nr >= boardSize || nc < 0 || nc >= boardSize) continue;
-                    let neighbor = getElementById('board2').querySelector(`.cell[data-row='${nr}'][data-col='${nc}']`);
+                    const neighbor = getElementById('board2').querySelector(`.cell[data-row='${nr}'][data-col='${nc}']`);
                     if(neighbor && !neighbor.classList.contains('hit') && !neighbor.classList.contains('miss')){
                         neighbor.classList.add('miss');
                     }
@@ -453,14 +456,14 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
 
 
     function isShipSunkPlayer(row, col) {
-        let shipCells = [];
-        let visited = {};
+        const shipCells = [];
+        const visited = {};
         function dfs(r, c) {
             const key = `${r},${c}`;
             if(visited[key]) return;
             visited[key] = true;
             if(boards.player[r][c] === 1) {
-                let cellEl = getElementById('board1').querySelector(`.cell[data-row='${r}'][data-col='${c}']`);
+                const cellEl = getElementById('board1').querySelector(`.cell[data-row='${r}'][data-col='${c}']`);
                 if(cellEl) {
                     shipCells.push(cellEl);
                     const directions = [[1,0],[-1,0],[0,1],[0,-1]];
@@ -478,8 +481,8 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
     }
 
     function markSurroundingPlayer(row, col) {
-        let shipPositions = [];
-        let visited = {};
+        const shipPositions = [];
+        const visited = {};
         function dfs(r, c) {
             const key = `${r},${c}`;
             if(visited[key]) return;
@@ -501,7 +504,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
                 for(let dc = -1; dc <= 1; dc++){
                     const nr = pos.r + dr, nc = pos.c + dc;
                     if(nr < 0 || nr >= boardSize || nc < 0 || nc >= boardSize) continue;
-                    let neighbor = getElementById('board1').querySelector(`.cell[data-row='${nr}'][data-col='${nc}']`);
+                    const neighbor = getElementById('board1').querySelector(`.cell[data-row='${nr}'][data-col='${nc}']`);
                     if(neighbor && !neighbor.classList.contains('hit') && !neighbor.classList.contains('miss')){
                         neighbor.classList.add('miss');
                     }
@@ -544,7 +547,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
             for(let j = 0; j < boardSize; j++) {
                 if(board[i][j] === 1) {
                     shipCellsCount++;
-                    let cell = document.querySelector(`${boardSelector} .cell[data-row='${i}'][data-col='${j}']`);
+                    const cell = document.querySelector(`${boardSelector} .cell[data-row='${i}'][data-col='${j}']`);
                     if(cell && cell.classList.contains('hit')) {
                         hitCellsCount++;
                     }
@@ -785,15 +788,15 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
     }
 
     function isTwoPlayerShipSunk(row, col, board, boardSelector) {
-        let shipCells = [];
-        let visited = {};
+        const shipCells = [];
+        const visited = {};
         
         function dfs(r, c) {
             const key = `${r},${c}`;
             if(visited[key]) return;
             visited[key] = true;
             if(board[r][c] === 1) {
-                let cellEl = document.querySelector(`${boardSelector} .cell[data-row='${r}'][data-col='${c}']`);
+                const cellEl = document.querySelector(`${boardSelector} .cell[data-row='${r}'][data-col='${c}']`);
                 if(cellEl) {
                     shipCells.push(cellEl);
                     const directions = [[1,0],[-1,0],[0,1],[0,-1]];
@@ -812,8 +815,8 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
     }
 
     function markTwoPlayerSurrounding(row, col, board, boardSelector) {
-        let shipPositions = [];
-        let visited = {};
+        const shipPositions = [];
+        const visited = {};
         
         function dfs(r, c) {
             const key = `${r},${c}`;
@@ -837,7 +840,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
                 for(let dc = -1; dc <= 1; dc++){
                     const nr = pos.r + dr, nc = pos.c + dc;
                     if(nr < 0 || nr >= boardSize || nc < 0 || nc >= boardSize) continue;
-                    let neighbor = document.querySelector(`${boardSelector} .cell[data-row='${nr}'][data-col='${nc}']`);
+                    const neighbor = document.querySelector(`${boardSelector} .cell[data-row='${nr}'][data-col='${nc}']`);
                     if(neighbor && !neighbor.classList.contains('hit') && !neighbor.classList.contains('miss')) {
                         neighbor.classList.add('miss');
                     }
@@ -900,7 +903,7 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
 
 
     function calculateShipCells(start, end) {
-        let shipCells = [];
+        const shipCells = [];
         if(start.row === end.row) {
             const min = Math.min(start.col, end.col);
             const max = Math.max(start.col, end.col);
