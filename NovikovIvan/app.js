@@ -70,7 +70,6 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
     let isBotMoving = false; 
     let playerCanShoot = true; 
     const boards = {}; 
-    let shipPlacementPhase = false;
     const shipsCount = () => Math.floor(boardSize / 2);
 
     let player1Shots = [];  
