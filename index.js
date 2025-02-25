@@ -8,8 +8,8 @@ let boards = {};
 let shipPlacementPhase = false;
 const shipsCount = () => Math.floor(boardSize / 2);
 
-let player1Shots = [];  // выстрелы первого игрока
-let player2Shots = [];  // выстрелы второго игрока
+let player1Shots = [];  
+let player2Shots = []; 
 
 let gameState = 'setup'; 
 let shipsToPlace = [];
@@ -62,7 +62,6 @@ function initGame() {
         gameState = 'placement';
         currentPlayer = 1;
         
-        // Меняем заголовок на "Игрок 1" только в режиме двух игроков
         document.querySelector('#player1 h2').textContent = 'Игрок 1';
         document.getElementById('player2Title').textContent = 'Игрок 2';
         
@@ -477,7 +476,6 @@ function checkVictory(board, boardSelector) {
     let shipCellsCount = 0;
     let hitCellsCount = 0;
     
-    // Считаем общее количество клеток с кораблями и количество попаданий
     for(let i = 0; i < boardSize; i++) {
         for(let j = 0; j < boardSize; j++) {
             if(board[i][j] === 1) {
@@ -581,7 +579,6 @@ function startTwoPlayerBattle() {
             updateBoardsDisplay();
             document.getElementById('board1').style.visibility = 'visible';
             document.getElementById('board2').style.visibility = 'visible';
-            // Не скрываем корабли на своём поле
             attachTwoPlayerBattleEvents();
             updateTurnMessage();
         }
@@ -600,7 +597,6 @@ function attachTwoPlayerBattleEvents() {
     const board1Cells = document.getElementById('board1').querySelectorAll('.cell');
     const board2Cells = document.getElementById('board2').querySelectorAll('.cell');
     
-    // Удаляем все обработчики
     board1Cells.forEach(cell => {
         cell.removeEventListener('click', twoPlayerBattleHandler);
     });
@@ -608,7 +604,6 @@ function attachTwoPlayerBattleEvents() {
         cell.removeEventListener('click', twoPlayerBattleHandler);
     });
     
-    // Добавляем обработчики только на поле противника
     if(currentPlayer === 1) {
         board2Cells.forEach(cell => {
             cell.addEventListener('click', twoPlayerBattleHandler);
@@ -636,29 +631,26 @@ function twoPlayerBattleHandler(e) {
     setTimeout(() => {
         cell.classList.remove('shooting');
         if(targetBoard[row][col] === 1) {
-            shotsArray[row][col] = 2; // 2 = попадание
+            shotsArray[row][col] = 2; 
             cell.classList.add('hit');
             cell.classList.add('ship');
             
-            // Проверяем, не потоплен ли корабль
             if(isShipDestroyed(row, col, targetBoard)) {
                 markDestroyedShipArea(row, col, targetBoard, shotsArray);
             }
             
-            // Проверяем победу текущего игрока
-            if(checkVictory(targetBoard, '#board2')) {  // Всегда проверяем на правой доске
+            if(checkVictory(targetBoard, '#board2')) {  
                 gameEnd(`victory_player${currentPlayer}`);
                 return;
             }
         } else {
-            shotsArray[row][col] = 1; // 1 = промах
+            shotsArray[row][col] = 1; 
             cell.classList.add('miss');
             switchPlayer();
         }
     }, 500);
 }
 
-// Добавляем новые функции для обработки уничтоженных кораблей
 function isShipDestroyed(row, col, board) {
     const visited = new Set();
     const shipCells = [];
@@ -670,7 +662,6 @@ function isShipDestroyed(row, col, board) {
         
         if(board[r][c] === 1) {
             shipCells.push({row: r, col: c});
-            // Проверяем соседние клетки
             [[0,1], [0,-1], [1,0], [-1,0]].forEach(([dr, dc]) => {
                 const newR = r + dr;
                 const newC = c + dc;
@@ -683,7 +674,6 @@ function isShipDestroyed(row, col, board) {
     
     dfs(row, col);
     
-    // Проверяем, все ли клетки корабля поражены
     const shotsArray = currentPlayer === 1 ? player1Shots : player2Shots;
     return shipCells.every(cell => shotsArray[cell.row][cell.col] === 2);
 }
@@ -692,7 +682,6 @@ function markDestroyedShipArea(row, col, board, shotsArray) {
     const visited = new Set();
     const shipCells = [];
     
-    // Сначала находим все клетки корабля
     function findShip(r, c) {
         const key = `${r},${c}`;
         if(visited.has(key)) return;
@@ -712,7 +701,6 @@ function markDestroyedShipArea(row, col, board, shotsArray) {
     
     findShip(row, col);
     
-    // Отмечаем все клетки вокруг корабля как промахи всегда на правой доске
     shipCells.forEach(({row, col}) => {
         for(let dr = -1; dr <= 1; dr++) {
             for(let dc = -1; dc <= 1; dc++) {
@@ -720,8 +708,7 @@ function markDestroyedShipArea(row, col, board, shotsArray) {
                 const newC = col + dc;
                 if(newR >= 0 && newR < boardSize && newC >= 0 && newC < boardSize) {
                     if(board[newR][newC] !== 1 && shotsArray[newR][newC] === 0) {
-                        shotsArray[newR][newC] = 1; // отмечаем как промах
-                        // Всегда используем правую доску (board2)
+                        shotsArray[newR][newC] = 1;
                         const cell = document.querySelector(`#board2 .cell[data-row='${newR}'][data-col='${newC}']`);
                         if(cell) {
                             cell.classList.add('miss');
@@ -902,20 +889,20 @@ function placeShipOnBoard(shipCells, playerNum) {
     });
 }
 
-// Добавляем новые функции для управления экраном перехода
+
 function showTransitionScreen(message, callback) {
     const transitionScreen = document.getElementById('transition-screen');
     const transitionMessage = document.getElementById('transition-message');
     const readyBtn = document.getElementById('ready-btn');
     
-    // Скрываем игровые поля
+
     document.getElementById('board1').style.visibility = 'hidden';
     document.getElementById('board2').style.visibility = 'hidden';
     
     transitionMessage.textContent = message;
     transitionScreen.style.display = 'flex';
     
-    // Очищаем предыдущий обработчик
+
     const newReadyBtn = readyBtn.cloneNode(true);
     readyBtn.parentNode.replaceChild(newReadyBtn, readyBtn);
     
@@ -932,11 +919,9 @@ function updateBoardsDisplay() {
     const player2Title = document.querySelector('#player2 h2');
 
     if (currentPlayer === 1) {
-        // Для первого игрока
         player1Title.textContent = 'Ваше поле (Игрок 1)';
         player2Title.textContent = 'Поле противника (Игрок 2)';
         
-        // Левое поле - корабли первого игрока и выстрелы второго игрока
         board1.innerHTML = '';
         generateBoardDOM('board1', boardSize);
         board1.querySelectorAll('.cell').forEach(cell => {
@@ -946,12 +931,9 @@ function updateBoardsDisplay() {
                 cell.classList.add('ship');
                 cell.style.backgroundColor = '#00008b';
             }
-            // Отображаем выстрелы второго игрока
             if (player2Shots[row][col] === 2) cell.classList.add('hit');
             if (player2Shots[row][col] === 1) cell.classList.add('miss');
         });
-        
-        // Правое поле - выстрелы первого игрока по второму игроку
         board2.innerHTML = '';
         generateBoardDOM('board2', boardSize);
         board2.querySelectorAll('.cell').forEach(cell => {
@@ -964,11 +946,9 @@ function updateBoardsDisplay() {
             if (player1Shots[row][col] === 1) cell.classList.add('miss');
         });
     } else {
-        // Для второго игрока
         player1Title.textContent = 'Ваше поле (Игрок 2)';
         player2Title.textContent = 'Поле противника (Игрок 1)';
         
-        // Левое поле - корабли второго игрока и выстрелы первого игрока
         board1.innerHTML = '';
         generateBoardDOM('board1', boardSize);
         board1.querySelectorAll('.cell').forEach(cell => {
@@ -978,12 +958,10 @@ function updateBoardsDisplay() {
                 cell.classList.add('ship');
                 cell.style.backgroundColor = '#00008b';
             }
-            // Отображаем выстрелы первого игрока
             if (player1Shots[row][col] === 2) cell.classList.add('hit');
             if (player1Shots[row][col] === 1) cell.classList.add('miss');
         });
         
-        // Правое поле - выстрелы второго игрока по первому игроку
         board2.innerHTML = '';
         generateBoardDOM('board2', boardSize);
         board2.querySelectorAll('.cell').forEach(cell => {
@@ -997,11 +975,9 @@ function updateBoardsDisplay() {
         });
     }
 
-    // Настройка кликабельности
-    board1.style.pointerEvents = 'none';  // своё поле не кликабельно
-    board2.style.pointerEvents = 'auto';  // поле противника кликабельно
+    board1.style.pointerEvents = 'none';  
+    board2.style.pointerEvents = 'auto';  
 
-    // Обновляем обработчики событий
     attachTwoPlayerBattleEvents();
 }
 
@@ -1009,7 +985,6 @@ function attachTwoPlayerBattleEvents() {
     const board1Cells = document.getElementById('board1').querySelectorAll('.cell');
     const board2Cells = document.getElementById('board2').querySelectorAll('.cell');
     
-    // Удаляем все старые обработчики
     board1Cells.forEach(cell => {
         cell.removeEventListener('click', twoPlayerBattleHandler);
     });
@@ -1017,7 +992,6 @@ function attachTwoPlayerBattleEvents() {
         cell.removeEventListener('click', twoPlayerBattleHandler);
     });
     
-    // Добавляем обработчики только на правое поле (поле противника)
     board2Cells.forEach(cell => {
         cell.addEventListener('click', twoPlayerBattleHandler);
     });
