@@ -1,4 +1,4 @@
-function appSeaBattle(containerId, cssPath = 'app.css') {
+function appSeaBattle(containerId, params = {}, cssPath = 'app.css') {
     const instanceId = 'seaBattle_' + Math.random().toString(36).substr(2, 9);
     
     if (cssPath) {
@@ -16,13 +16,11 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
         return "Sea Battle";
     }
     
-    // Создаем элемент-обертку с уникальным ID
     const wrapper = document.createElement('div');
     wrapper.className = 'sea-battle-wrapper';
     wrapper.id = instanceId;
     container.appendChild(wrapper);
-    
-    // Модифицируем HTML, добавляя instanceId к каждому ID
+
     wrapper.innerHTML = `
         <h1>Морской бой</h1>
         <div id="${instanceId}_controls">
@@ -40,26 +38,30 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
             <button id="${instanceId}_startBtn">Старт</button>
             <button id="${instanceId}_confirmShipsBtn" style="display:none;">Подтвердить корабли</button>
         </div>
-        <div id="${instanceId}_game">
-            <div id="${instanceId}_player1" class="board-container">
-                <h2>Игрок</h2>
-                <div id="${instanceId}_board1" class="board"></div>
+        <div id="${instanceId}_gameContainer" class="game-container">
+            <div id="${instanceId}_boards" class="boards-container">
+                <div id="${instanceId}_player1" class="board-container">
+                    <h2 class="board-title">Игрок</h2>
+                    <div id="${instanceId}_board1" class="board"></div>
+                </div>
+                <div id="${instanceId}_player2" class="board-container">
+                    <h2 id="${instanceId}_player2Title" class="board-title">Бот</h2>
+                    <div id="${instanceId}_board2" class="board"></div>
+                </div>
             </div>
-            <div id="${instanceId}_player2" class="board-container">
-                <h2 id="${instanceId}_player2Title">Бот</h2>
-                <div id="${instanceId}_board2" class="board"></div>
+            <div id="${instanceId}_messages" class="messages-container">
+                <div id="${instanceId}_transition-screen" style="display: none;" class="transition-screen">
+                    <h2 id="${instanceId}_transition-message">Передайте устройство следующему игроку</h2>
+                    <button id="${instanceId}_ready-btn">Я готов</button>
+                </div>
+                <p id="${instanceId}_placementMsg" style="display:none;">Нажмите на клетки для расстановки кораблей</p>
+                <p id="${instanceId}_shipHint" style="display:none;">Чтобы поставить корабль, кликните сначала в клетку для носа корабля, затем в клетку для кормы.</p>
+                <p id="${instanceId}_turnHint" style="display:none;">Ваш ход. Для выстрела нажмите на клетку противника.</p>
             </div>
-            <div id="${instanceId}_transition-screen" style="display: none;" class="transition-screen">
-                <h2 id="${instanceId}_transition-message">Передайте устройство следующему игроку</h2>
-                <button id="${instanceId}_ready-btn">Я готов</button>
-            </div>
-            <p id="${instanceId}_placementMsg" style="display:none;">Нажмите на клетки для расстановки кораблей</p>
-            <p id="${instanceId}_shipHint" style="display:none;">Чтобы поставить корабль, кликните сначала в клетку для носа корабля, затем в клетку для кормы.</p>
-            <p id="${instanceId}_turnHint" style="display:none;">Ваш ход. Для выстрела нажмите на клетку противника.</p>
         </div>
     `;
 
-    // Модифицируем все обращения к DOM элементам, добавляя instanceId
+
     function getElementById(id) {
         return document.getElementById(`${instanceId}_${id}`);
     }
@@ -100,9 +102,15 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
         
         getElementById('board1').innerHTML = '';
         getElementById('board2').innerHTML = '';
-        
         generateBoardDOM('board1', boardSize);
         generateBoardDOM('board2', boardSize);
+        
+        const gameContainer = getElementById('gameContainer');
+        gameContainer.style.display = 'flex';
+        gameContainer.style.justifyContent = 'center';
+        gameContainer.style.alignItems = 'flex-start';
+        gameContainer.style.gap = '20px';
+        gameContainer.style.flexWrap = 'nowrap';
         
         if(mode === 'single') {
             boards.player = createEmptyBoard(boardSize);
@@ -112,7 +120,8 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
             currentShipIndex = 0;
             getElementById('confirmShipsBtn').style.display = 'none';
             getElementById('placementMsg').style.display = 'block';
-            getElementById('placementMsg').textContent = `Разместите корабль длиной ${shipsToPlace[currentShipIndex]}`;
+            getElementById('placementMsg').textContent += `Разместите корабль длиной ${shipsToPlace[currentShipIndex]}`;
+            
             getElementById('shipHint').style.display = 'block';
             attachPlacementEvents();
         } else {
@@ -1063,7 +1072,6 @@ function appSeaBattle(containerId, cssPath = 'app.css') {
         });
     }
 
-    // Инициализация после создания DOM элементов
     getElementById('startBtn').addEventListener('click', initGame);
 
     return "Sea Battle";
